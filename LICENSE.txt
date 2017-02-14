@@ -1,0 +1,4 @@
+
+JFXGL is copyright Jeff Martin (Cuchaz)
+
+All rights reserved
