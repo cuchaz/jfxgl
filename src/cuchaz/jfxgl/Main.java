@@ -36,6 +36,9 @@ public class Main {
 		GL.createCapabilities();
 		Callback debugProc = LWJGLDebug.enableDebugging();
 		
+		// TEMP: init OpenGL state needed for JavaFX
+		// TODO: move this to JavaFX area?
+		
 		// disable frame limiters (like vsync)
 		GLFW.glfwSwapInterval(0);
 		
@@ -52,7 +55,7 @@ public class Main {
 				
 				// TODO: get JavaFX to render to an off-screen FBO, then render to main FBO
 				// clear the framebuf
-				//GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+				GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 
 				// do JavaFX stuff
 				jfxgl.render();

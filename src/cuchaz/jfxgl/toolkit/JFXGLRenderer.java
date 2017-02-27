@@ -6,6 +6,8 @@ import java.util.concurrent.Future;
 
 import com.sun.javafx.tk.quantum.QuantumRenderer;
 
+import cuchaz.jfxgl.glass.JFXGLWindow;
+
 public class JFXGLRenderer extends QuantumRenderer {
 	
 	private List<Runnable> jobQueue;
@@ -52,5 +54,10 @@ public class JFXGLRenderer extends QuantumRenderer {
 			job.run();
 		}
 		jobs.clear();
+		
+		// copy the javafx framebuffer to the main framebuffer
+		if (JFXGLWindow.mainWindow != null) {
+			JFXGLWindow.mainWindow.renderFramebuf();
+		}
 	}
 }

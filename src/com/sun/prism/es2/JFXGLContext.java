@@ -275,8 +275,17 @@ public class JFXGLContext extends GLContext {
 	}
 
 	@Override
-	public void blitFBO(int msaaFboID, int dstFboID, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1) {
-		throw new UnsupportedOperationException("IMPLEMENT ME!");
+	public void blitFBO(int srcFboId, int dstFboId, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1) {
+		GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, srcFboId);
+		GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, dstFboId);
+		GL30.glBlitFramebuffer(
+			srcX0, srcY0,
+			srcX1, srcY1,
+			dstX0, dstY0,
+			dstX1, dstY1,
+			GL11.GL_COLOR_BUFFER_BIT,
+			GL11.GL_NEAREST
+		);
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 package cuchaz.jfxgl.glass;
 
+import java.io.File;
 import java.nio.IntBuffer;
 
 import org.lwjgl.glfw.GLFW;
@@ -13,40 +14,31 @@ import com.sun.glass.ui.Window;
 import com.sun.javafx.application.PlatformImpl;
 import com.sun.prism.es2.JFXGLContext;
 import com.sun.prism.es2.JFXGLFactory;
+import com.sun.prism.es2.TexturedQuad;
 
 import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
 import cuchaz.jfxgl.Log;
+import cuchaz.jfxgl.TexTools;
 
 public class JFXGLWindow extends Window {
 	
-	private static int numWindows = 0;
+	public static JFXGLWindow mainWindow = null;
 	
-	private long hwnd;
-	private JFXGLContext context;
+	private long hwnd = 0;
+	private JFXGLContext context = null;
 	
-	private JFXGLView view;
+	private JFXGLView view = null;
 	
-	private int width;
-	private int height;
-	private boolean fboDirty;
-	private int texId;
-	private int fboId;
-	
+	private int width = 0;
+	private int height = 0;
+	private boolean fboDirty = true;
+	private int texId = 0;
+	private int fboId = 0;
+	private TexturedQuad quad = null;
 	
 	protected JFXGLWindow(Window owner, Screen screen, int styleMask) {
 		super(owner, screen, styleMask);
-		
-		hwnd = 0;
-		context = null;
-		
-		view = null;
-		
-		width = 0;
-		height = 0;
-		fboDirty = true;
-		texId = 0;
-		fboId = 0;
 	}
 	
 	@Override
@@ -57,10 +49,10 @@ public class JFXGLWindow extends Window {
 		Log.log("JFXGLWindow._createWindow()   ownerhwnd=%d   screenhwnd=%d", ownerhwnd, screenhwnd);
 		
 		// only ever create one window
-		if (numWindows >= 1) {
+		if (mainWindow != null) {
 			throw new IllegalStateException("can't create more than one window");
 		}
-		numWindows++;
+		mainWindow = this;
 		
 		// and don't actually create it either
 		// use the one that was already created by the main thread
@@ -135,7 +127,6 @@ public class JFXGLWindow extends Window {
 		// TEMP
 		Log.log("JFXGLWindow.renderBegin()");
 		
-		/* TODO: get separate framebuffer working
 		if (context == null) {
 			context = new JFXGLContext(hwnd);
 		}
@@ -150,6 +141,9 @@ public class JFXGLWindow extends Window {
 			if (fboId != 0) {
 				context.deleteFBO(fboId);
 			}
+			if (quad != null) {
+				quad.cleanup();
+			}
 			
 			// TEMP
 			Log.log("\tcreate FBO %dx%d", width, height);
@@ -157,7 +151,6 @@ public class JFXGLWindow extends Window {
 			texId = context.createTexture(width, height);
 			fboId = context.createFBO(texId);
 		}
-		*/
 	}
 	
 	@CalledByMainThread
@@ -170,12 +163,26 @@ public class JFXGLWindow extends Window {
 	@CalledByMainThread
 	public int getFBOId() {
 		
-		// NOTE: renderXXX methods called on the main thread
-		
 		// TEMP
 		Log.log("JFXGLWindow.getFBOId()   fbo=%d", fboId);
 		
 		return fboId;
+	}
+	
+	public void renderFramebuf() {
+		
+		// copy our framebuffer to the main framebuffer
+		if (context != null) {
+			context.blitFBO(
+				fboId, 0,
+				0, 0, width, height,
+				0, 0, width, height
+			);
+		}
+	}
+	
+	public void dumpFramebuf(File file) {
+		TexTools.dumpTexture(texId, file);
 	}
 
 	@Override

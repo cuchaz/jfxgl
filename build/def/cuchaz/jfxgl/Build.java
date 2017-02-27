@@ -50,6 +50,9 @@ public class Build extends JkJavaBuild {
 			.on(fxmlProject.asJavaDependency())
 			
 			// 3rd-party libs
+			.on("ar.com.hjg:pngj:2.1.0")
+			
+			// LWJGL
 			.on(         "org.lwjgl:lwjgl:" + LWJGLVersion)
 			.on(uglyHack("org.lwjgl:lwjgl:" + LWJGLVersion + ":natives-linux"))
 			.on(         "org.lwjgl:lwjgl-glfw:" + LWJGLVersion)

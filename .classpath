@@ -4,6 +4,11 @@
 	<classpathentry including="**/*" kind="src" path="src"/>
 	<classpathentry exported="true" kind="src" path="/graphics"/>
 	<classpathentry exported="true" kind="src" path="/fxml"/>
+	<classpathentry kind="var" path="JERKAR_REPO/ar.com.hjg/pngj/jars/pngj-2.1.0.jar" sourcepath="JERKAR_REPO/ar.com.hjg/pngj/sources/pngj-2.1.0-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file://home/jeff/.jerkar/cache/repo/ar.com.hjg/pngj/javadocs/pngj-2.1.0-javadoc.jar"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="var" path="JERKAR_REPO/org.lwjgl/lwjgl/jars/lwjgl-3.1.1.jar" sourcepath="JERKAR_REPO/org.lwjgl/lwjgl/sources/lwjgl-3.1.1-sources.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:file://home/jeff/.jerkar/cache/repo/org.lwjgl/lwjgl/javadocs/lwjgl-3.1.1-javadoc.jar"/>
@@ -41,6 +46,6 @@
 	</classpathentry>
 	<classpathentry kind="var" path="JERKAR_REPO/org.lwjgl/lwjgl-stb/jars/lwjgl-stb-3.1.1-natives-linux.jar"/>
 	<classpathentry kind="var" path="JERKAR_HOME/org.jerkar.core-all.jar" sourcepath="JERKAR_HOME/libs-sources/org.jerkar.core-all-sources.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/openjdk-8u121-noFX"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
