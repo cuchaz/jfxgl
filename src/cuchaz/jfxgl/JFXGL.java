@@ -7,6 +7,8 @@ import com.sun.javafx.application.PlatformImpl;
 import com.sun.javafx.tk.Toolkit;
 import com.sun.prism.es2.JFXGLFactory;
 
+import cuchaz.jfxgl.glass.JFXGLView;
+import cuchaz.jfxgl.glass.JFXGLWindow;
 import cuchaz.jfxgl.toolkit.JFXGLToolkit;
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -135,7 +137,7 @@ public class JFXGL {
 	}
 
 	public void render() {
-
+		
 		// tell JavaFX stages and scenes to update and send render jobs (on the FX thread)
 		toolkit.postPulse();
 		
@@ -167,5 +169,74 @@ public class JFXGL {
 			toolkit.disposePipeline();
 		}
 		Log.log("platform finished");
+	}
+
+	public void key(int key, int scanCode, int action, int mods) {
+		
+		if (JFXGLWindow.mainWindow != null) {
+			
+			// we're on the main thread, so send to events thread
+			PlatformImpl.runLater(() -> {
+				JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
+				if (view != null) {
+					view.handleGLFWKey(key, scanCode, action, mods);
+				}
+			});
+		}
+	}
+	
+	public void keyChar(int codepoint, int mods) {
+		if (JFXGLWindow.mainWindow != null) {
+			
+			// we're on the main thread, so send to events thread
+			PlatformImpl.runLater(() -> {
+				JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
+				if (view != null) {
+					view.handleGLFWKeyChar(codepoint, mods);
+				}
+			});
+		}
+	}
+
+	public void cursorPos(double x, double y) {
+		
+		if (JFXGLWindow.mainWindow != null) {
+			
+			// we're on the main thread, so send to events thread
+			PlatformImpl.runLater(() -> {
+				JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
+				if (view != null) {
+					view.handleGLFWCursorPos(x, y);
+				}
+			});
+		}
+	}
+
+	public void mouseButton(int button, int action, int mods) {
+		
+		if (JFXGLWindow.mainWindow != null) {
+			
+			// we're on the main thread, so send to events thread
+			PlatformImpl.runLater(() -> {
+				JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
+				if (view != null) {
+					view.handleGLFWMouseButton(button, action, mods);
+				}
+			});
+		}
+	}
+
+	public void scroll(double dx, double dy) {
+		
+		if (JFXGLWindow.mainWindow != null) {
+			
+			// we're on the main thread, so send to events thread
+			PlatformImpl.runLater(() -> {
+				JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
+				if (view != null) {
+					view.handleGLFWScroll(dx, dy);
+				}
+			});
+		}
 	}
 }

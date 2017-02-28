@@ -4,9 +4,12 @@ import java.io.File;
 import java.nio.IntBuffer;
 
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWWindowSizeCallbackI;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryStack;
 
+import com.sun.glass.events.WindowEvent;
 import com.sun.glass.ui.Cursor;
 import com.sun.glass.ui.Pixels;
 import com.sun.glass.ui.Screen;
@@ -31,12 +34,15 @@ public class JFXGLWindow extends Window {
 	private JFXGLContext context = null;
 	
 	private JFXGLView view = null;
+	private GLFWWindowSizeCallbackI windowSizeCallback; 
 	
 	private int width = 0;
 	private int height = 0;
 	private boolean fboDirty = true;
 	private int texId = 0;
 	private int fboId = 0;
+	
+	private boolean isRendering = false;
 	
 	protected JFXGLWindow(Window owner, Screen screen, int styleMask) {
 		super(owner, screen, styleMask);
@@ -59,7 +65,8 @@ public class JFXGLWindow extends Window {
 		// use the one that was already created by the main thread
 		hwnd = JFXGLFactory.getHwnd();
 		
-		GLFW.glfwSetWindowSizeCallback(hwnd, (long hwndAgain, int width, int height) -> {
+		// NOTE: always keep a strong reference to callbacks, or they get garbage collected
+		windowSizeCallback = (long hwndAgain, int width, int height) -> {
 			
 			// save our own copy of the size for framebuffer sizing
 			if (width != this.width || height != this.height) {
@@ -70,11 +77,16 @@ public class JFXGLWindow extends Window {
 			
 			// NOTE: GLFW events called on main thread, so relay to events thread
 			PlatformImpl.runLater(() -> {
+				notifyResize(WindowEvent.RESIZE, width, height);
 				if (view != null) {
 					view.notifyResize(this.width, this.height);
 				}
 			});
-		});
+		};
+		GLFW.glfwSetWindowSizeCallback(hwnd, windowSizeCallback);
+		
+		// NOTE: don't bother trying to read the window size here
+		// nothing cares if we try anyway
 		
 		return hwnd;
 	}
@@ -106,9 +118,10 @@ public class JFXGLWindow extends Window {
 		// TEMP
 		Log.log("JFXGLWindow._setView() hwnd=" + hwnd + ", hview=" + (view == null ? null : view.getNativeView()));
 		
-		if (view != null) {
+		// tell JavaFX to update the view size
+		if (this.view != null) {
 			
-			// tell JavaFX about the current window size
+			// get the initial window size
 			try (MemoryStack m = MemoryStack.stackPush()) {
 				IntBuffer widthBuf = m.callocInt(1);
 				IntBuffer heightBuf = m.callocInt(1);
@@ -116,7 +129,13 @@ public class JFXGLWindow extends Window {
 				width = widthBuf.get(0);
 				height = heightBuf.get(0);
 			}
-			this.view.notifyResize(width, height);
+			
+			// if we notify resize now, JavaFX just ignores it
+			// so put it on the event queue
+			PlatformImpl.runLater(() -> {
+				notifyResize(WindowEvent.RESIZE, width, height);
+				this.view.notifyResize(width, height);
+			});
 		}
 		
 		return true;
@@ -129,18 +148,18 @@ public class JFXGLWindow extends Window {
 		Log.log("JFXGLWindow.renderBegin()");
 		
 		// let JavaFX wank around in its own attribute frame
-		GL11.glPushAttrib(GLBackupBits);
+		if (!isRendering) {
+			
+			// NOTE: make sure the main framebuffer is bound when messing with the attribute stack
+			// see: https://www.opengl.org/discussion_boards/showthread.php/184670-glPopAttrib-Invalid-draw-bindings
+			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+			
+			GL11.glPushAttrib(GLBackupBits);
+			isRendering = true;
+		}
 		
 		if (context == null) {
 			context = new JFXGLContext(hwnd);
-			
-			// init OpenGL state expected by JavaFX
-			GL11.glEnable(GL11.GL_BLEND);
-			GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
-			
-			GL11.glDepthMask(false);
-			GL11.glDisable(GL11.GL_DEPTH_TEST);
-			GL11.glDisable(GL11.GL_SCISSOR_TEST);
 		}
 		
 		// do we need to make a new framebuffer?
@@ -160,12 +179,31 @@ public class JFXGLWindow extends Window {
 			texId = context.createTexture(width, height);
 			fboId = context.createFBO(texId);
 		}
+		
+		// init OpenGL state expected by JavaFX
+		GL11.glEnable(GL11.GL_BLEND);
+		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
+		
+		GL11.glDepthMask(false);
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		GL11.glDisable(GL11.GL_SCISSOR_TEST);
+		
+		// TODO: does resetting this state every frame cause problems?
+		// GLContext instances (and native code) cache some OpenGL state
 	}
 	
 	@CalledByMainThread
 	public void renderEnd() {
 		
-		GL11.glPopAttrib();
+		if (isRendering) {
+
+			// NOTE: make sure the main framebuffer is bound when messing with the attribute stack
+			// see: https://www.opengl.org/discussion_boards/showthread.php/184670-glPopAttrib-Invalid-draw-bindings
+			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+			
+			GL11.glPopAttrib();
+			isRendering = false;
+		}
 		
 		// TEMP
 		Log.log("JFXGLWindow.renderEnd()");
@@ -173,10 +211,6 @@ public class JFXGLWindow extends Window {
 	
 	@CalledByMainThread
 	public int getFBOId() {
-		
-		// TEMP
-		Log.log("JFXGLWindow.getFBOId()   fbo=%d", fboId);
-		
 		return fboId;
 	}
 	
@@ -195,6 +229,21 @@ public class JFXGLWindow extends Window {
 	public void dumpFramebuf(File file) {
 		TexTools.dumpTexture(texId, file);
 	}
+	
+	// override these to disable the event thread check,
+	// just use the size in this class
+	// who cares if we race on window size?
+	// the framebuffer has its own size
+	
+	@Override
+	public int getWidth() {
+		return width;
+	}
+	
+	@Override
+	public int getHeight() {
+		return height;
+	}
 
 	@Override
 	protected boolean _setMenubar(long hwnd, long menubarhwnd) {
@@ -203,12 +252,14 @@ public class JFXGLWindow extends Window {
 
 	@Override
 	protected boolean _minimize(long hwnd, boolean minimize) {
-		throw new UnsupportedOperationException();
+		// don't let JavaFX control the window
+		return false;
 	}
 
 	@Override
 	protected boolean _maximize(long hwnd, boolean maximize, boolean wasMaximized) {
-		throw new UnsupportedOperationException();
+		// don't let JavaFX control the window
+		return false;
 	}
 
 	@Override
@@ -223,34 +274,67 @@ public class JFXGLWindow extends Window {
 
 	@Override
 	protected void _setBounds(long hwnd, int x, int y, boolean xSet, boolean ySet, int w, int h, int cw, int ch, float xGravity, float yGravity) {
-		// TODO: implement me
-		warnIgnore("setBounds");
+		
+		// don't let JavaFX control the window size
+		
+		/* but if we wanted to...
+		
+		if (w > 0) {
+			// window width surpass window content width (cw)
+			width = w;
+		} else if (cw > 0) {
+			// content width changed
+			width = cw;
+		}
+
+		if (h > 0) {
+			// window height surpass window content height(ch)
+			height = h;
+		} else if (cw > 0) {
+			// content height changed
+			height = ch;
+		}
+		
+		if (!xSet) {
+			x = getX();
+		}
+		if (!ySet) {
+			y = getY();
+		}
+		if (maxWidth >= 0) {
+			width = Math.min(width, maxWidth);
+		}
+		if (maxHeight >= 0) {
+			height = Math.min(height, maxHeight);
+		}
+		width = Math.max(width, minWidth);
+		height = Math.max(height, minHeight);
+
+		GLFW.glfwSetWindowSize(hwnd, width, height);
+		GLFW.glfwSetWindowPos(hwnd, x, y);
+		*/
 	}
 
 	protected boolean _setVisible(long hwnd, boolean visible) {
-		if (visible) {
-			GLFW.glfwShowWindow(hwnd);
-		} else {
-			GLFW.glfwHideWindow(hwnd);
-		}
-		return true;
+		// don't let JavaFX control the window
+		return visible;
 	}
 
 	@Override
 	protected boolean _setResizable(long hwnd, boolean resizable) {
-		warnIgnore("setResizable");
+		// don't let JavaFX control the window
 		return false;
 	}
 
 	@Override
 	protected boolean _requestFocus(long hwnd, int event) {
-		warnIgnore("requestFocus");
+		GLFW.glfwFocusWindow(hwnd);
 		return true;
 	}
 
 	@Override
 	protected void _setFocusable(long hwnd, boolean isFocusable) {
-		warnIgnore("setFocusable");
+		// don't let JavaFX control the window
 	}
 
 	@Override
@@ -265,75 +349,77 @@ public class JFXGLWindow extends Window {
 
 	@Override
 	protected boolean _setTitle(long hwnd, String title) {
-		warnIgnore("setTitle");
+		// don't let JavaFX control the window
 		return false;
 	}
 
 	@Override
 	protected void _setLevel(long hwnd, int level) {
-		throw new UnsupportedOperationException();
+		// don't let JavaFX control the window
 	}
 
 	@Override
 	protected void _setAlpha(long hwnd, float alpha) {
-		warnIgnore("setAlpha");
+		// can't change window alpha, just ignore
 	}
 
 	@Override
 	protected boolean _setBackground(long hwnd, float r, float g, float b) {
-		throw new UnsupportedOperationException();
+		// don't let JavaFX control the window
+		return false;
 	}
 
 	@Override
 	protected void _setEnabled(long hwnd, boolean enabled) {
-		throw new UnsupportedOperationException();
+		// don't let JavaFX control the window
 	}
 
 	@Override
 	protected boolean _setMinimumSize(long hwnd, int width, int height) {
-		warnIgnore("setMinimumSize");
+		// don't let JavaFX control the window
 		return false;
 	}
 
 	@Override
 	protected boolean _setMaximumSize(long hwnd, int width, int height) {
-		warnIgnore("setMaximumSize");
+		// don't let JavaFX control the window
 		return false;
 	}
 
 	@Override
 	protected void _setIcon(long hwnd, Pixels pixels) {
-		warnIgnore("setIcon");
+		// don't let JavaFX control the window
 	}
 
 	@Override
 	protected void _setCursor(long hwnd, Cursor cursor) {
-		warnIgnore("setCursor");
+		// TODO: add flag to allow JavaFX cursors?
+		System.out.println("TODO: imlpement cursor changes");
 	}
 
 	@Override
 	protected void _toFront(long hwnd) {
-		throw new UnsupportedOperationException();
+		// don't let JavaFX control the window
 	}
 
 	@Override
 	protected void _toBack(long hwnd) {
-		throw new UnsupportedOperationException();
+		// don't let JavaFX control the window
 	}
 
 	@Override
 	protected void _enterModal(long hwnd) {
-		throw new UnsupportedOperationException();
+		// don't let JavaFX control the window
 	}
 
 	@Override
 	protected void _enterModalWithWindow(long dialog, long window) {
-		throw new UnsupportedOperationException();
+		// don't let JavaFX control the window
 	}
 
 	@Override
 	protected void _exitModal(long hwnd) {
-		throw new UnsupportedOperationException();
+		// don't let JavaFX control the window
 	}
 
 	@Override
@@ -346,9 +432,5 @@ public class JFXGLWindow extends Window {
 	@Override
 	protected void _releaseInput(long hwnd) {
 		throw new UnsupportedOperationException();
-	}
-	
-	private void warnIgnore(String msg) {
-		System.err.println("WARNING: ignoring request: " + msg);
 	}
 }

@@ -4,6 +4,7 @@ import java.security.AccessControlContext;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.glass.ui.Application;
 import com.sun.glass.ui.Screen;
@@ -26,6 +27,7 @@ public class JFXGLToolkit extends QuantumToolkit {
 	private ES2Pipeline pipeline;
 	private JFXGLRenderer renderer;
 	private JFXGLPaintCollector paintCollector;
+	private AtomicBoolean pulseRequested;
 
 	@Override
 	public boolean init() {
@@ -53,6 +55,7 @@ public class JFXGLToolkit extends QuantumToolkit {
 		
 		renderer = new JFXGLRenderer();
 		paintCollector = new JFXGLPaintCollector(this);
+		pulseRequested = new AtomicBoolean(false);
 
 		return true;
 	}
@@ -110,12 +113,23 @@ public class JFXGLToolkit extends QuantumToolkit {
 	
 	@Override
 	public void postPulse() {
-		if (paintCollector.hasDirty()) {
+		
+		boolean shouldPulse = paintCollector.hasDirty()
+			|| pulseRequested.get();
+			// || animationRunning.get();
+			
+		if (shouldPulse) {
+			pulseRequested.set(false);
 			Application.invokeLater(() -> {
 				firePulse();
 				paintCollector.renderAll();
 			});
 		}
+	}
+
+	@Override
+	public void requestNextPulse() {
+		pulseRequested.set(true);
 	}
 
 	@Override
@@ -201,11 +215,6 @@ public class JFXGLToolkit extends QuantumToolkit {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
-	public void requestNextPulse() {
-		// render loop is external, ignore
-	}
-	
 	@Override
 	public void waitFor(Task t) {
 		throw new UnsupportedOperationException();

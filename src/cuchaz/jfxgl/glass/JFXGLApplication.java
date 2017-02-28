@@ -250,19 +250,24 @@ public class JFXGLApplication extends Application {
 		throw new UnsupportedOperationException();
 	}
 
+	// these are pretty arbitrary, I guess
+	private static long multiClickTime = 500;
+	private static int multiClickMaxX = 20;
+	private static int multiClickMaxY = 20;
+	
 	@Override
 	protected long staticView_getMultiClickTime() {
-		throw new UnsupportedOperationException();
+		return multiClickTime;
 	}
 
 	@Override
 	protected int staticView_getMultiClickMaxX() {
-		throw new UnsupportedOperationException();
+		return multiClickMaxX;
 	}
 
 	@Override
 	protected int staticView_getMultiClickMaxY() {
-		throw new UnsupportedOperationException();
+		return multiClickMaxY;
 	}
 
 	@Override
