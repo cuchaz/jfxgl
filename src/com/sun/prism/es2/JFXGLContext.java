@@ -198,7 +198,7 @@ public class JFXGLContext extends GLContext {
 			}
 
 			// remove garbage from newly-allocated buffers
-			clearBuffers(Color.BLACK, true, false, true);
+			clearBuffers(Color.TRANSPARENT, true, false, true);
 		}
 
 		return id;

@@ -36,9 +36,6 @@ public class Main {
 		GL.createCapabilities();
 		Callback debugProc = LWJGLDebug.enableDebugging();
 		
-		// TEMP: init OpenGL state needed for JavaFX
-		// TODO: move this to JavaFX area?
-		
 		// disable frame limiters (like vsync)
 		GLFW.glfwSwapInterval(0);
 		

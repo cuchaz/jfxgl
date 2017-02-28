@@ -4,6 +4,7 @@ import java.io.File;
 import java.nio.IntBuffer;
 
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.system.MemoryStack;
 
 import com.sun.glass.ui.Cursor;
@@ -14,7 +15,6 @@ import com.sun.glass.ui.Window;
 import com.sun.javafx.application.PlatformImpl;
 import com.sun.prism.es2.JFXGLContext;
 import com.sun.prism.es2.JFXGLFactory;
-import com.sun.prism.es2.TexturedQuad;
 
 import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
@@ -24,6 +24,8 @@ import cuchaz.jfxgl.TexTools;
 public class JFXGLWindow extends Window {
 	
 	public static JFXGLWindow mainWindow = null;
+	
+	private static int GLBackupBits = GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_ENABLE_BIT;
 	
 	private long hwnd = 0;
 	private JFXGLContext context = null;
@@ -35,7 +37,6 @@ public class JFXGLWindow extends Window {
 	private boolean fboDirty = true;
 	private int texId = 0;
 	private int fboId = 0;
-	private TexturedQuad quad = null;
 	
 	protected JFXGLWindow(Window owner, Screen screen, int styleMask) {
 		super(owner, screen, styleMask);
@@ -127,8 +128,19 @@ public class JFXGLWindow extends Window {
 		// TEMP
 		Log.log("JFXGLWindow.renderBegin()");
 		
+		// let JavaFX wank around in its own attribute frame
+		GL11.glPushAttrib(GLBackupBits);
+		
 		if (context == null) {
 			context = new JFXGLContext(hwnd);
+			
+			// init OpenGL state expected by JavaFX
+			GL11.glEnable(GL11.GL_BLEND);
+			GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
+			
+			GL11.glDepthMask(false);
+			GL11.glDisable(GL11.GL_DEPTH_TEST);
+			GL11.glDisable(GL11.GL_SCISSOR_TEST);
 		}
 		
 		// do we need to make a new framebuffer?
@@ -141,9 +153,6 @@ public class JFXGLWindow extends Window {
 			if (fboId != 0) {
 				context.deleteFBO(fboId);
 			}
-			if (quad != null) {
-				quad.cleanup();
-			}
 			
 			// TEMP
 			Log.log("\tcreate FBO %dx%d", width, height);
@@ -155,6 +164,8 @@ public class JFXGLWindow extends Window {
 	
 	@CalledByMainThread
 	public void renderEnd() {
+		
+		GL11.glPopAttrib();
 		
 		// TEMP
 		Log.log("JFXGLWindow.renderEnd()");
