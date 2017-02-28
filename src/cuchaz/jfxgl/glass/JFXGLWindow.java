@@ -391,10 +391,48 @@ public class JFXGLWindow extends Window {
 		// don't let JavaFX control the window
 	}
 
+	long hcursor = 0;
+	
 	@Override
 	protected void _setCursor(long hwnd, Cursor cursor) {
+		
 		// TODO: add flag to allow JavaFX cursors?
-		System.out.println("TODO: imlpement cursor changes");
+		
+		// cleanup the old cursor if needed
+		if (hcursor != 0) {
+			GLFW.glfwDestroyCursor(hcursor);
+			hcursor = 0;
+		}
+		
+		hcursor = GLFW.glfwCreateStandardCursor(translateCursor(cursor));
+		GLFW.glfwSetCursor(hwnd, hcursor);
+	}
+	
+	private int translateCursor(Cursor cursor) {
+		switch (cursor.getType()) {
+			case Cursor.CURSOR_NONE: return GLFW.GLFW_ARROW_CURSOR;
+		    case Cursor.CURSOR_CUSTOM: return GLFW.GLFW_ARROW_CURSOR;
+		    case Cursor.CURSOR_DEFAULT: return GLFW.GLFW_ARROW_CURSOR;
+		    case Cursor.CURSOR_TEXT: return GLFW.GLFW_IBEAM_CURSOR;
+		    case Cursor.CURSOR_CROSSHAIR: return GLFW.GLFW_CROSSHAIR_CURSOR;
+		    case Cursor.CURSOR_CLOSED_HAND: return GLFW.GLFW_HAND_CURSOR;
+		    case Cursor.CURSOR_OPEN_HAND: return GLFW.GLFW_HAND_CURSOR;
+		    case Cursor.CURSOR_POINTING_HAND: return GLFW.GLFW_HAND_CURSOR;
+		    case Cursor.CURSOR_RESIZE_LEFT: return GLFW.GLFW_HRESIZE_CURSOR;
+		    case Cursor.CURSOR_RESIZE_RIGHT: return GLFW.GLFW_HRESIZE_CURSOR;
+		    case Cursor.CURSOR_RESIZE_UP: return GLFW.GLFW_VRESIZE_CURSOR;
+		    case Cursor.CURSOR_RESIZE_DOWN: return GLFW.GLFW_VRESIZE_CURSOR;
+		    case Cursor.CURSOR_RESIZE_LEFTRIGHT: return GLFW.GLFW_HRESIZE_CURSOR;
+		    case Cursor.CURSOR_RESIZE_UPDOWN: return GLFW.GLFW_HRESIZE_CURSOR;
+		    case Cursor.CURSOR_DISAPPEAR: return GLFW.GLFW_ARROW_CURSOR;
+		    case Cursor.CURSOR_WAIT: return GLFW.GLFW_ARROW_CURSOR;
+		    case Cursor.CURSOR_RESIZE_SOUTHWEST: return GLFW.GLFW_ARROW_CURSOR;
+		    case Cursor.CURSOR_RESIZE_SOUTHEAST: return GLFW.GLFW_ARROW_CURSOR;
+		    case Cursor.CURSOR_RESIZE_NORTHWEST: return GLFW.GLFW_ARROW_CURSOR;
+		    case Cursor.CURSOR_RESIZE_NORTHEAST: return GLFW.GLFW_ARROW_CURSOR;
+		    case Cursor.CURSOR_MOVE: return GLFW.GLFW_ARROW_CURSOR;
+		    default: return GLFW.GLFW_ARROW_CURSOR;
+		}
 	}
 
 	@Override

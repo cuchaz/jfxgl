@@ -153,7 +153,6 @@ public class Main {
 			
 			// load the main fxml
 			Fxml<BorderPane,MainController> main = Fxml.load(getClass().getResource("Main.fxml"), BorderPane.class, MainController.class);
-			main.controller.stage = stage;
 			Scene scene = new Scene(main.node);
 			stage.setScene(scene);
 			

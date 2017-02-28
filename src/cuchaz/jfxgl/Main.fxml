@@ -18,7 +18,7 @@
             <VBox alignment="CENTER" layoutX="10.0" layoutY="40.0" prefHeight="135.0" prefWidth="348.0" spacing="30.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
                <children>
                   <Label alignment="CENTER" text="Hello World from JavaFX!" />
-                  <TextField />
+                  <TextField fx:id="text" />
                   <Label text="Isn't this fun?" />
                   <Slider majorTickUnit="2.0" max="11.0" min="1.0" minorTickCount="1" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="5.0" />
                </children>
