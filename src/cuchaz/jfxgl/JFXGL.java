@@ -239,4 +239,15 @@ public class JFXGL {
 			});
 		}
 	}
+
+	public void focus(boolean isFocused) {
+		
+		if (JFXGLWindow.mainWindow != null) {
+			
+			// we're on the main thread, so send to events thread
+			PlatformImpl.runLater(() -> {
+				JFXGLWindow.mainWindow.handleGLFWFocus(isFocused);
+			});
+		}
+	}
 }

@@ -8,6 +8,7 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWKeyCallbackI;
 import org.lwjgl.glfw.GLFWMouseButtonCallbackI;
 import org.lwjgl.glfw.GLFWScrollCallbackI;
+import org.lwjgl.glfw.GLFWWindowFocusCallbackI;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.system.Callback;
@@ -77,6 +78,11 @@ public class Main {
 				jfxgl.scroll(dx, dy);
 			};
 			GLFW.glfwSetScrollCallback(hwnd, scrollCallback);
+			
+			GLFWWindowFocusCallbackI focusCallback = (long hwndAgain, boolean isFocused) -> {
+				jfxgl.focus(isFocused);
+			};
+			GLFW.glfwSetWindowFocusCallback(hwnd, focusCallback);
 			
 			// render loop
 			Log.log("render loop...");

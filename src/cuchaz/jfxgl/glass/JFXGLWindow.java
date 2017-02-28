@@ -325,7 +325,11 @@ public class JFXGLWindow extends Window {
 		// don't let JavaFX control the window
 		return false;
 	}
-
+	
+	public void handleGLFWFocus(boolean isFocused) {
+		this.notifyFocus(isFocused ? WindowEvent.FOCUS_GAINED : WindowEvent.FOCUS_LOST);
+	}
+	
 	@Override
 	protected boolean _requestFocus(long hwnd, int event) {
 		GLFW.glfwFocusWindow(hwnd);
