@@ -179,10 +179,18 @@ public class JFXGLView extends View {
 
 	public void handleGLFWScroll(double dx, double dy) {
 		
-		// TODO: translate from GLFW to JavaFX
+		// translate from GLFW to JavaFX
+		int xAbs = mouseX;
+		int yAbs = mouseY;
+		int modifiers = 0; // GLFW doesn't give us modifiers for mouse scroll =(
+		int lines = 1;
+		int chars = 0;
+		int defaultLines = 0;
+		int defaultChars = 0;
+		double xMultiplier = 1.0;
+		double yMultiplier = 1.0;
 		
-		// int x, int y, int xAbs, int yAbs, double deltaX, double deltaY, int modifiers, int lines, int chars, int defaultLines, int defaultChars, double xMultiplier, double yMultiplier
-		//notifyScroll(x, y, xAbs, yAbs, deltaX, deltaY, modifiers, lines, chars, defaultLines, defaultChars, xMultiplier, yMultiplier);
+		notifyScroll(mouseX, mouseY, xAbs, yAbs, dx, dy, modifiers, lines, chars, defaultLines, defaultChars, xMultiplier, yMultiplier);
 	}
 	
 	private int translateKeyAction(int action) {
