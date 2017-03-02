@@ -5,6 +5,7 @@ import java.util.concurrent.CountDownLatch;
 import com.sun.javafx.application.ParametersImpl;
 import com.sun.javafx.application.PlatformImpl;
 import com.sun.javafx.tk.Toolkit;
+import com.sun.prism.es2.JFXGLContext;
 import com.sun.prism.es2.JFXGLFactory;
 
 import cuchaz.jfxgl.glass.JFXGLView;
@@ -15,18 +16,19 @@ import javafx.stage.Stage;
 
 public class JFXGL {
 
-	public static interface ApplicationFactory {
-		Application makeApplication();
+	public static interface ApplicationFactory<T extends Application> {
+		T makeApplication();
 	}
 	
 	private JFXGLToolkit toolkit;
 	private Application app;
 	private PlatformImpl.FinishListener finishListener;
+	private JFXGLContext context;
 	
 	public volatile boolean keepRendering;
 
 	@SuppressWarnings("deprecation")
-	public void start(long hwnd, String[] args, ApplicationFactory factory) {
+	public <T extends Application> T start(long hwnd, String[] args, ApplicationFactory<T> factory) {
 		
 		// install our glass,toolkit,prism implementations to JavaFX
 		System.setProperty("glass.platform", "JFXGL");
@@ -78,8 +80,12 @@ public class JFXGL {
 			}
 		});
 		
+		// no really, this is safe, I promise
+		@SuppressWarnings("unchecked")
+		T typedApp = (T)app;
+		
 		if (!keepRendering) {
-			return;
+			return typedApp;
 		}
 		
 		// call app init (on this thread)
@@ -93,7 +99,7 @@ public class JFXGL {
 		}
 		
 		if (!keepRendering) {
-			return;
+			return typedApp;
 		}
 		
 		// call app start (on the FX thread)
@@ -114,7 +120,7 @@ public class JFXGL {
 		});
 		
 		if (!keepRendering) {
-			return;
+			return typedApp;
 		}
 		
 		// setup app exit listener
@@ -134,6 +140,21 @@ public class JFXGL {
 			}
 		};
 		PlatformImpl.addListener(finishListener);
+		
+		// make a context for the calling thread
+		// so it doesn't get confused about how to manage context lifecycles
+		context = new JFXGLContext(hwnd);
+		
+		return typedApp;
+	}
+	
+	/**
+	 * This context is used internally by JavaFX. You probably
+	 * don't want to use it for your application rendering unless
+	 * you don't have anything better already.
+	 */
+	public JFXGLContext getContext() {
+		return context;
 	}
 
 	public void render() {

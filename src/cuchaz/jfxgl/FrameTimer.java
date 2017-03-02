@@ -11,10 +11,13 @@ public class FrameTimer {
 	private long startTime;
 	private boolean isFirst;
 	
+	public float fps;
+	
 	public FrameTimer() {
 		numFrames = 0;
 		startTime = 0;
 		isFirst = true;
+		fps = 0;
 	}
 
 	public void update() {
@@ -36,7 +39,8 @@ public class FrameTimer {
 		if (elapsed > UpdateIntervalNS && numFrames > MinNumFrames) {
 			
 			// yup
-			System.out.println(String.format("FPS: %.1f", (float)numFrames*NSpS/elapsed));
+			fps = (float)numFrames*NSpS/elapsed;
+			System.out.println(String.format("FPS: %.1f", fps));
 			
 			// and reset the counters
 			startTime = now;

@@ -51,6 +51,7 @@ public class Build extends JkJavaBuild {
 			
 			// 3rd-party libs
 			.on("ar.com.hjg:pngj:2.1.0")
+			.on("org.joml:joml:1.9.2")
 			
 			// LWJGL
 			.on(         "org.lwjgl:lwjgl:" + LWJGLVersion)
@@ -80,6 +81,11 @@ public class Build extends JkJavaBuild {
 	@Override
 	public JkFileTreeSet editedSources() {
 		return JkFileTreeSet.of(file("src"));
+	}
+	
+	@Override
+	public JkFileTreeSet editedResources() {
+		return JkFileTreeSet.of(file("resources"));
 	}
 	
 	@Override

@@ -10,6 +10,11 @@
 			<attribute name="javadoc_location" value="jar:file://home/jeff/.jerkar/cache/repo/ar.com.hjg/pngj/javadocs/pngj-2.1.0-javadoc.jar"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="var" path="JERKAR_REPO/org.joml/joml/jars/joml-1.9.2.jar" sourcepath="JERKAR_REPO/org.joml/joml/sources/joml-1.9.2-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file://home/jeff/.jerkar/cache/repo/org.joml/joml/javadocs/joml-1.9.2-javadoc.jar"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="var" path="JERKAR_REPO/org.lwjgl/lwjgl/jars/lwjgl-3.1.1.jar" sourcepath="JERKAR_REPO/org.lwjgl/lwjgl/sources/lwjgl-3.1.1-sources.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:file://home/jeff/.jerkar/cache/repo/org.lwjgl/lwjgl/javadocs/lwjgl-3.1.1-javadoc.jar"/>

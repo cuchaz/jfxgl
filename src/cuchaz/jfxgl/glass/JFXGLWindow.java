@@ -22,7 +22,6 @@ import com.sun.prism.es2.TexturedQuad;
 
 import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
-import cuchaz.jfxgl.Log;
 import cuchaz.jfxgl.TexTools;
 
 public class JFXGLWindow extends Window {
@@ -54,9 +53,6 @@ public class JFXGLWindow extends Window {
 	@Override
 	@CalledByEventsThread
 	protected long _createWindow(long ownerhwnd, long screenhwnd, int mask) {
-		
-		// TEMP
-		Log.log("JFXGLWindow._createWindow()   ownerhwnd=%d   screenhwnd=%d", ownerhwnd, screenhwnd);
 		
 		// only ever create one window
 		if (mainWindow != null) {
@@ -118,9 +114,6 @@ public class JFXGLWindow extends Window {
 		this.hwnd = hwnd;
 		this.view = (JFXGLView)view;
 		
-		// TEMP
-		Log.log("JFXGLWindow._setView() hwnd=" + hwnd + ", hview=" + (view == null ? null : view.getNativeView()));
-		
 		// tell JavaFX to update the view size
 		if (this.view != null) {
 			
@@ -146,9 +139,6 @@ public class JFXGLWindow extends Window {
 	
 	@CalledByMainThread
 	public void renderBegin() {
-		
-		// TEMP
-		Log.log("JFXGLWindow.renderBegin()");
 		
 		// let JavaFX wank around in its own attribute frame
 		if (!isRendering) {
@@ -180,9 +170,6 @@ public class JFXGLWindow extends Window {
 			if (quad != null) {
 				quad.cleanup();
 			}
-			
-			// TEMP
-			Log.log("\tcreate FBO %dx%d", width, height);
 			
 			texId = context.createTexture(width, height);
 			fboId = context.createFBO(texId);
@@ -217,9 +204,6 @@ public class JFXGLWindow extends Window {
 			GL11.glPopAttrib();
 			isRendering = false;
 		}
-		
-		// TEMP
-		Log.log("JFXGLWindow.renderEnd()");
 	}
 	
 	@CalledByMainThread

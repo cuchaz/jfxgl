@@ -46,12 +46,14 @@ public class Main {
 		// disable frame limiters (like vsync)
 		GLFW.glfwSwapInterval(0);
 		
-		GL11.glClearColor(0.6f, 0.8f, 0.6f, 1.0f);
+		GL11.glClearColor(0f, 0f, 0f, 1.0f);
 		
 		JFXGL jfxgl = new JFXGL();
-		//FrameTimer timer = new FrameTimer();
+		FrameTimer timer = new FrameTimer();
 		try {
-			jfxgl.start(hwnd, args, () -> new MyJavaFXApp());
+			
+			// start the app
+			MyJavaFXApp app = jfxgl.start(hwnd, args, () -> new MyJavaFXApp());
 			
 			// listen for input events
 			// NOTE: always keep a strong reference to callbacks, or they get garbage collected
@@ -85,12 +87,24 @@ public class Main {
 			};
 			GLFW.glfwSetWindowFocusCallback(hwnd, focusCallback);
 			
+			// poll app ui for state
+			
+			// init triangle rendering
+			long startTimeNs = System.nanoTime();
+			TriangleRenderer triangle = new TriangleRenderer(jfxgl.getContext());
+			
 			// render loop
 			Log.log("render loop...");
 			while (!GLFW.glfwWindowShouldClose(hwnd)) {
 				
 				// clear the framebuf
 				GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+				
+				// update the triangle
+				long elapsedNs = System.nanoTime() - startTimeNs;
+				float elapsedS = (float)elapsedNs/1000/1000/1000;
+				float rotationRadians = app.controller.update(elapsedS, timer.fps);
+				triangle.render(rotationRadians);
 
 				// do JavaFX stuff
 				jfxgl.render();
@@ -99,8 +113,8 @@ public class Main {
 				GLFW.glfwPollEvents();
 				
 				// TEMP: do a little frame limiting
-				Thread.sleep(16); // ~60 fps
-				//timer.update();
+				//Thread.sleep(16); // ~60 fps
+				timer.update();
 			}
 			Log.log("render loop finished");
 			
@@ -157,11 +171,14 @@ public class Main {
 	
 	public static class MyJavaFXApp extends Application {
 		
+		public MainController controller;
+		
 		@Override
 		public void start(Stage stage) {
 			
 			// load the main fxml
 			Fxml<AnchorPane,MainController> main = Fxml.load(getClass().getResource("Main.fxml"), AnchorPane.class, MainController.class);
+			this.controller = main.controller;
 			Scene scene = new Scene(main.node);
 			stage.setScene(scene);
 			
