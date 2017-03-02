@@ -1,6 +1,7 @@
 package com.sun.glass.ui.jfxgl;
 
 import com.sun.glass.ui.Application;
+import com.sun.glass.ui.Clipboard;
 import com.sun.glass.ui.Menu;
 import com.sun.glass.ui.MenuBar;
 import com.sun.glass.ui.MenuItem;
@@ -36,6 +37,12 @@ public class JFXGLPlatformFactory extends PlatformFactory {
 
 	@Override
 	public ClipboardDelegate createClipboardDelegate() {
-		throw new UnsupportedOperationException();
+		return new ClipboardDelegate() {
+			@Override
+			public Clipboard createClipboard(String clipboardName) {
+				// TODO: implement clipboards
+				return null;
+			}
+		};
 	}
 }

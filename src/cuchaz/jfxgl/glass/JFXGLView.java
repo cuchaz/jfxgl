@@ -1,5 +1,6 @@
 package cuchaz.jfxgl.glass;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.lwjgl.glfw.GLFW;
@@ -140,6 +141,7 @@ public class JFXGLView extends View {
 		notifyKey(type, keyCode, keyChars, modifiers);
 	}
 	
+	private Map<Integer,Boolean> mouseButtonIsDown = new HashMap<>();
 	private int mouseX = 0;
 	private int mouseY = 0;
 
@@ -149,8 +151,14 @@ public class JFXGLView extends View {
 		mouseX = (int)x;
 		mouseY = (int)y;
 		
+		// is a button down?
+		boolean isDown = false;
+		for (Boolean val : mouseButtonIsDown.values()) {
+			isDown = isDown || val;
+		}
+		
 		// translate from GLFW to JavaFX
-		int type = MouseEvent.MOVE;
+		int type = isDown ? MouseEvent.DRAG : MouseEvent.MOVE;
 		int button = MouseEvent.BUTTON_NONE;
 		int modifiers = 0;
 		
@@ -165,6 +173,16 @@ public class JFXGLView extends View {
 		int modifiers = translateMods(mods);
 		
 		notifyMouse(type, button, modifiers);
+	
+		// update down state
+		switch (action) {
+			case GLFW.GLFW_PRESS:
+				mouseButtonIsDown.put(button, true);
+			break;
+			case GLFW.GLFW_RELEASE:
+				mouseButtonIsDown.put(button, false);
+			break;
+		}
 	}
 	
 	private void notifyMouse(int type, int button, int modifiers) {

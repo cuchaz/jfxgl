@@ -17,6 +17,7 @@ import com.sun.javafx.tk.quantum.QuantumToolkit;
 import com.sun.prism.GraphicsPipeline;
 import com.sun.prism.es2.ES2Pipeline;
 import com.sun.prism.impl.PrismSettings;
+import com.sun.scenario.DelayedRunnable;
 
 import cuchaz.jfxgl.Log;
 import javafx.stage.StageStyle;
@@ -28,6 +29,8 @@ public class JFXGLToolkit extends QuantumToolkit {
 	private JFXGLRenderer renderer;
 	private JFXGLPaintCollector paintCollector;
 	private AtomicBoolean pulseRequested;
+	private AtomicBoolean animationRunning;
+	private DelayedRunnable animationRunnable;
 
 	@Override
 	public boolean init() {
@@ -56,6 +59,8 @@ public class JFXGLToolkit extends QuantumToolkit {
 		renderer = new JFXGLRenderer();
 		paintCollector = new JFXGLPaintCollector(this);
 		pulseRequested = new AtomicBoolean(false);
+		animationRunning = new AtomicBoolean(false);
+		animationRunnable = null;
 
 		return true;
 	}
@@ -115,11 +120,19 @@ public class JFXGLToolkit extends QuantumToolkit {
 	public void postPulse() {
 		
 		boolean shouldPulse = paintCollector.hasDirty()
-			|| pulseRequested.get();
-			// || animationRunning.get();
+			|| pulseRequested.get()
+			|| animationRunning.get();
 			
 		if (shouldPulse) {
 			pulseRequested.set(false);
+			
+			if (animationRunnable != null) {
+				animationRunning.set(true);
+				Application.invokeLater(animationRunnable);
+			} else {
+				animationRunning.set(false);
+			}
+			
 			Application.invokeLater(() -> {
 				firePulse();
 				paintCollector.renderAll();
@@ -130,6 +143,14 @@ public class JFXGLToolkit extends QuantumToolkit {
 	@Override
 	public void requestNextPulse() {
 		pulseRequested.set(true);
+	}
+	
+	@Override
+	public void setAnimationRunnable(DelayedRunnable val) {
+		if (val != null) {
+			animationRunning.set(true);
+		}
+		animationRunnable = val;
 	}
 
 	@Override
