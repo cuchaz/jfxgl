@@ -1,4 +1,4 @@
-package cuchaz.jfxgl.demo;
+package cuchaz.jfxgl.demo.overlay;
 
 import com.sun.javafx.application.PlatformImpl;
 

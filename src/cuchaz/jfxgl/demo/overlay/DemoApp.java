@@ -1,4 +1,4 @@
-package cuchaz.jfxgl.demo;
+package cuchaz.jfxgl.demo.overlay;
 
 import java.io.IOException;
 

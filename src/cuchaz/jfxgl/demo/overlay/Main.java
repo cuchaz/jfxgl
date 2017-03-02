@@ -1,4 +1,4 @@
-package cuchaz.jfxgl.demo;
+package cuchaz.jfxgl.demo.overlay;
 
 import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFW;
@@ -10,6 +10,8 @@ import org.lwjgl.system.MemoryUtil;
 
 import cuchaz.jfxgl.JFXGL;
 import cuchaz.jfxgl.LWJGLDebug;
+import cuchaz.jfxgl.demo.FrameTimer;
+import cuchaz.jfxgl.demo.TriangleRenderer;
 
 public class Main {
 	
