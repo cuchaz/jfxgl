@@ -17,8 +17,9 @@ import org.lwjgl.system.MemoryUtil;
 import cuchaz.jfxgl.FXTools.Fxml;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 public class Main {
 	
@@ -32,7 +33,7 @@ public class Main {
 		}
 		
 		// create the window
-		long hwnd = GLFW.glfwCreateWindow(300, 300, "JFXGL Prototype", MemoryUtil.NULL, MemoryUtil.NULL);
+		long hwnd = GLFW.glfwCreateWindow(600, 338, "JFXGL Prototype", MemoryUtil.NULL, MemoryUtil.NULL);
 		if (hwnd <= 0) {
 			throw new Error("Can't create GLFW window");
 		}
@@ -117,12 +118,13 @@ public class Main {
 		Log.log("done!");
 	}
 	
+	/* TEMP: DEMO
 	public static void demo(String[] args)
 	throws Exception {
 		
 		// make a window using GLFW
 		GLFWErrorCallback.createPrint(System.err).set();
-		long hwnd = GLFW.glfwCreateWindow(300, 300, "JFXGL Prototype", MemoryUtil.NULL, MemoryUtil.NULL);
+		long hwnd = GLFW.glfwCreateWindow(500, 300, "JFXGL Prototype", MemoryUtil.NULL, MemoryUtil.NULL);
 
 		// init LWJGL/OpenGL
 		GLFW.glfwMakeContextCurrent(hwnd);
@@ -151,16 +153,21 @@ public class Main {
 		GLFW.glfwTerminate();
 		GLFW.glfwSetErrorCallback(null).free();
 	}
-
+	*/
+	
 	public static class MyJavaFXApp extends Application {
 		
 		@Override
 		public void start(Stage stage) {
 			
 			// load the main fxml
-			Fxml<BorderPane,MainController> main = Fxml.load(getClass().getResource("Main.fxml"), BorderPane.class, MainController.class);
+			Fxml<AnchorPane,MainController> main = Fxml.load(getClass().getResource("Main.fxml"), AnchorPane.class, MainController.class);
 			Scene scene = new Scene(main.node);
 			stage.setScene(scene);
+			
+			// set transparency for ui overlay
+			scene.setFill(null);
+			stage.initStyle(StageStyle.TRANSPARENT);
 			
 			// the window is actually already showing, but JavaFX doesn't know that yet
 			// so make JavaFX catch up by "showing" the window

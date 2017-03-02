@@ -1,5 +1,8 @@
 package com.sun.prism.es2;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -130,6 +133,15 @@ public class JFXGLContext extends GLContext {
 		}
 	}
 
+	public int compileShader(URL url, boolean isVertex) {
+		try (InputStream in = url.openStream()) {
+			String source = ES2Shader.readStreamIntoString(in);
+			return compileShader(source, isVertex);
+		} catch (IOException ex) {
+			throw new RuntimeException("can't compile shader at: " + url, ex);
+		}
+	}
+	
 	@Override
 	public int compileShader(String source, boolean isVertex) {
 		
@@ -270,8 +282,12 @@ public class JFXGLContext extends GLContext {
 	}
 
 	@Override
-	public void deleteShader(int shadeID) {
-		throw new UnsupportedOperationException("IMPLEMENT ME!");
+	public void deleteShader(int shaderId) {
+		GL20.glDeleteShader(shaderId);
+	}
+	
+	public void deleteProgram(int programId) {
+		GL20.glDeleteProgram(programId);
 	}
 
 	@Override
@@ -361,8 +377,9 @@ public class JFXGLContext extends GLContext {
 	}
 
 	@Override
-	public void setShaderProgram(int progid) {
-		GL20.glUseProgram(progid);
+	public void setShaderProgram(int programId) {
+		// TODO: use program caching that works with push/pop attrib
+		GL20.glUseProgram(programId);
 	}
 
 	@Override

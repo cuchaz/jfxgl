@@ -15,6 +15,10 @@ import ar.com.hjg.pngj.PngWriter;
 public class TexTools {
 	
 	public static void dumpTexture(int texId, File file) {
+		dumpTexture(texId, file, true);
+	}
+	
+	public static void dumpTexture(int texId, File file, boolean flipY) {
 		
 		int w = GL45.glGetTextureLevelParameteri(texId, 0, GL11.GL_TEXTURE_WIDTH);
 		int h = GL45.glGetTextureLevelParameteri(texId, 0, GL11.GL_TEXTURE_HEIGHT);
@@ -32,8 +36,17 @@ public class TexTools {
 			ImageLineInt pixels = new ImageLineInt(info);
 			int[] scanline = pixels.getScanline();
 			int stride = w*numChannels;
-			//for (int y=h-1; y>=0; y--) {
-			for (int y=0; y<h; y++) {
+			
+			int ystart = 0;
+			int yend = h;
+			int ystep = 1;
+			if (flipY) {
+				ystart = h - 1;
+				yend = -1;
+				ystep = -1;
+			}
+			
+			for (int y = ystart; y != yend; y += ystep) {
 				imgBuf.position(y*stride);
 				for (int x=0; x<w; x++) {
 					for (int c=0; c<numChannels; c++) {

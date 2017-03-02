@@ -18,6 +18,7 @@ import com.sun.glass.ui.Window;
 import com.sun.javafx.application.PlatformImpl;
 import com.sun.prism.es2.JFXGLContext;
 import com.sun.prism.es2.JFXGLFactory;
+import com.sun.prism.es2.TexturedQuad;
 
 import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
@@ -41,6 +42,8 @@ public class JFXGLWindow extends Window {
 	private boolean fboDirty = true;
 	private int texId = 0;
 	private int fboId = 0;
+	private TexturedQuad quad = null;
+	private TexturedQuad.Shader quadShader = null;
 	
 	private boolean isRendering = false;
 	
@@ -160,6 +163,8 @@ public class JFXGLWindow extends Window {
 		
 		if (context == null) {
 			context = new JFXGLContext(hwnd);
+			
+			quadShader = new TexturedQuad.Shader(context);
 		}
 		
 		// do we need to make a new framebuffer?
@@ -172,12 +177,18 @@ public class JFXGLWindow extends Window {
 			if (fboId != 0) {
 				context.deleteFBO(fboId);
 			}
+			if (quad != null) {
+				quad.cleanup();
+			}
 			
 			// TEMP
 			Log.log("\tcreate FBO %dx%d", width, height);
 			
 			texId = context.createTexture(width, height);
 			fboId = context.createFBO(texId);
+			quad = new TexturedQuad(0, 0, width, height, texId, quadShader);
+			quadShader.bind();
+			quadShader.setViewSize(width, height);
 		}
 		
 		// init OpenGL state expected by JavaFX
@@ -187,6 +198,8 @@ public class JFXGLWindow extends Window {
 		GL11.glDepthMask(false);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_SCISSOR_TEST);
+		
+		GL11.glClearColor(0, 0, 0, 0);
 		
 		// TODO: does resetting this state every frame cause problems?
 		// GLContext instances (and native code) cache some OpenGL state
@@ -218,11 +231,9 @@ public class JFXGLWindow extends Window {
 		
 		// copy our framebuffer to the main framebuffer
 		if (context != null) {
-			context.blitFBO(
-				fboId, 0,
-				0, 0, width, height,
-				0, 0, width, height
-			);
+			GL11.glEnable(GL11.GL_BLEND);
+			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+			quad.render();
 		}
 	}
 	

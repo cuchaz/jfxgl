@@ -2,4 +2,5 @@
 syntax: glob
 .settings
 build/output
+bin
 
