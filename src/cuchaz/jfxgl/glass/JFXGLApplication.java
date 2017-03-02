@@ -20,8 +20,6 @@ import com.sun.glass.ui.Timer;
 import com.sun.glass.ui.View;
 import com.sun.glass.ui.Window;
 
-import cuchaz.jfxgl.Log;
-
 public class JFXGLApplication extends Application {
 
 	private static abstract class Event {
@@ -78,8 +76,6 @@ public class JFXGLApplication extends Application {
 		
 		// start the events thread
 		Thread toolkitThread = new Thread(() -> {
-			
-			Log.log("events thread started");
 			r.run();
 			eventLoop();
 			
@@ -137,12 +133,12 @@ public class JFXGLApplication extends Application {
 
 	@Override
 	protected Object _enterNestedEventLoop() {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
 	protected void _leaveNestedEventLoop(Object retValue) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
@@ -152,7 +148,7 @@ public class JFXGLApplication extends Application {
 
 	@Override
 	public Window createWindow(long parent) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
@@ -167,32 +163,32 @@ public class JFXGLApplication extends Application {
 
 	@Override
 	public Cursor createCursor(int x, int y, Pixels pixels) {
-		return new JFXGLCursor(x, y, pixels);
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
 	protected void staticCursor_setVisible(boolean visible) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
 	protected Size staticCursor_getBestSize(int width, int height) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
 	public Pixels createPixels(int width, int height, ByteBuffer data) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
 	public Pixels createPixels(int width, int height, IntBuffer data) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
 	public Pixels createPixels(int width, int height, IntBuffer data, float scale) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
@@ -202,7 +198,7 @@ public class JFXGLApplication extends Application {
 
 	@Override
 	public Robot createRobot() {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
@@ -224,19 +220,17 @@ public class JFXGLApplication extends Application {
 
 	@Override
 	public Timer createTimer(Runnable r) {
-		// TODO: do we really need this timer?
-		Log.log("\n\ncreateTimer\n\n");
-		return new JFXGLTimer(r);
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
 	protected int staticTimer_getMinPeriod() {
-		return JFXGLTimer.getMinPeriod_impl();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
 	protected int staticTimer_getMaxPeriod() {
-		return JFXGLTimer.getMaxPeriod_impl();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
@@ -277,11 +271,11 @@ public class JFXGLApplication extends Application {
 
 	@Override
 	protected boolean _supportsUnifiedWindows() {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
 	protected int _getKeyCodeForChar(char c) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 }

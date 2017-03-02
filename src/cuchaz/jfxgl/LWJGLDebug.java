@@ -2,7 +2,8 @@ package cuchaz.jfxgl;
 
 import java.io.PrintStream;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
@@ -16,31 +17,33 @@ import org.lwjgl.system.MemoryUtil;
 
 public class LWJGLDebug {
 	
+	public static PrintStream stream = APIUtil.DEBUG_STREAM;
+	public static Integer[] exceptionSeverities = { GL43.GL_DEBUG_SEVERITY_HIGH };
+	public static Integer[] reportSeverities = { GL43.GL_DEBUG_SEVERITY_HIGH, GL43.GL_DEBUG_SEVERITY_MEDIUM, GL43.GL_DEBUG_SEVERITY_LOW };
+	
 	public static Callback enableDebugging() {
-		return enableDebugging(APIUtil.DEBUG_STREAM, GL43.GL_DEBUG_SEVERITY_HIGH);
-	}
-	
-	public static Callback enableDebugging(PrintStream stream, Integer ... exceptionSeverities) {
-		return enableDebugging(stream, Arrays.asList(exceptionSeverities));
-	}
-	
-	public static Callback enableDebugging(Integer ... exceptionSeverities) {
-		return enableDebugging(APIUtil.DEBUG_STREAM, Arrays.asList(exceptionSeverities));
-	}
-	
-	public static Callback enableDebugging(PrintStream stream, List<Integer> exceptionSeverities) {
+		
+		// copy global state for the closure
+		PrintStream stream = LWJGLDebug.stream;
+		Set<Integer> exceptionSeverities = new HashSet<>(Arrays.asList(LWJGLDebug.exceptionSeverities));
+		Set<Integer> reportSeverities = new HashSet<>(Arrays.asList(LWJGLDebug.reportSeverities));
 		
 		// define the error reporting
 		GLDebugMessageCallback proc = GLDebugMessageCallback.create((source, type, id, severity, length, message, userParam) -> {
 			
+			// skip this message?
+			if (!reportSeverities.contains(severity)) {
+				return;
+			}
+			
 			// build the message
 			StringBuilder buf = new StringBuilder();
 			buf.append("OpenGL Debug Message:\n");
-			buf.append(String.format("\tID:      0x%X\n", id));
-			buf.append(String.format("\tSource:  %s\n", getDebugSource(source)));
-			buf.append(String.format("\tType:    %s\n", getDebugType(type)));
-			buf.append(String.format("\tSeverity: %s\n", getDebugSeverity(severity)));
-			buf.append(String.format("\tMessage:  %s\n", GLDebugMessageCallback.getMessage(length, message)));
+			buf.append(String.format("\tID:        0x%X\n", id));
+			buf.append(String.format("\tSource:    %s\n", getDebugSource(source)));
+			buf.append(String.format("\tType:      %s\n", getDebugType(type)));
+			buf.append(String.format("\tSeverity:  %s\n", getDebugSeverity(severity)));
+			buf.append(String.format("\tMessage:   %s\n", GLDebugMessageCallback.getMessage(length, message)));
 			
 			boolean isException = exceptionSeverities.contains(severity);
 			if (isException) {
@@ -65,8 +68,7 @@ public class LWJGLDebug {
 		return proc;
 	}
 	
-	public static String getDebugSource(int source) {
-		switch (source) {
+	public static String getDebugSource(int source) { switch (source) {
 			case GL43.GL_DEBUG_SOURCE_API:
 				return "API";
 			case GL43.GL_DEBUG_SOURCE_WINDOW_SYSTEM:

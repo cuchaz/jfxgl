@@ -1,6 +1,15 @@
 package cuchaz.jfxgl;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWCharModsCallbackI;
+import org.lwjgl.glfw.GLFWCursorPosCallbackI;
+import org.lwjgl.glfw.GLFWKeyCallbackI;
+import org.lwjgl.glfw.GLFWMouseButtonCallbackI;
+import org.lwjgl.glfw.GLFWScrollCallbackI;
+import org.lwjgl.glfw.GLFWWindowFocusCallbackI;
 
 import com.sun.javafx.application.ParametersImpl;
 import com.sun.javafx.application.PlatformImpl;
@@ -16,19 +25,28 @@ import javafx.stage.Stage;
 
 public class JFXGL {
 
-	public static interface ApplicationFactory<T extends Application> {
-		T makeApplication();
+	public static interface CheckedRunnable {
+		void run() throws Exception;
+	}
+	
+	private static class GLFWCallbacks {
+		public GLFWKeyCallbackI key = null;
+		public GLFWCharModsCallbackI keyChar = null;
+		public GLFWCursorPosCallbackI cursorPos = null;
+		public GLFWMouseButtonCallbackI mouseButton = null;
+		public GLFWScrollCallbackI scroll = null;
+		public GLFWWindowFocusCallbackI windowFocus = null;
 	}
 	
 	private JFXGLToolkit toolkit;
 	private Application app;
 	private PlatformImpl.FinishListener finishListener;
 	private JFXGLContext context;
+	private GLFWCallbacks ourCallbacks;
+	private GLFWCallbacks existingCallbacks;
 	
-	public volatile boolean keepRendering;
-
 	@SuppressWarnings("deprecation")
-	public <T extends Application> T start(long hwnd, String[] args, ApplicationFactory<T> factory) {
+	public void start(long hwnd, String[] args, Application app) {
 		
 		// install our glass,toolkit,prism implementations to JavaFX
 		System.setProperty("glass.platform", "JFXGL");
@@ -45,13 +63,11 @@ public class JFXGL {
 		try {
 			
 			// start the platform
-			Log.log("starting platform...");
 			CountDownLatch startupLatch = new CountDownLatch(1);
 			PlatformImpl.startup(() -> {
 				startupLatch.countDown();
 			});
 			startupLatch.await();
-			Log.log("platform started");
 			
 			toolkit = (JFXGLToolkit)Toolkit.getToolkit();
 			
@@ -59,93 +75,151 @@ public class JFXGL {
 			throw new Error(ex);
 		}
 		
-		// use the keep rendering flag to track errors for now
-		keepRendering = true;
-		
-		// call the app constructor (on the FX thread)
-		Log.log("app()");
-		PlatformImpl.runAndWait(() -> {
-			try {
-				
-				app = factory.makeApplication();
-				
-				// translate the String[] args into JavaFX Parameters
-				ParametersImpl.registerParameters(app, new ParametersImpl(args));
-				PlatformImpl.setApplicationName(app.getClass());
-				
-			} catch (Throwable t) {
-				System.err.println("Exception in Application constructor");
-				t.printStackTrace(System.err);
-				keepRendering = false;
-			}
-		});
-		
-		// no really, this is safe, I promise
-		@SuppressWarnings("unchecked")
-		T typedApp = (T)app;
-		
-		if (!keepRendering) {
-			return typedApp;
-		}
+		// translate the String[] args into JavaFX Parameters
+		ParametersImpl.registerParameters(app, new ParametersImpl(args));
+		PlatformImpl.setApplicationName(app.getClass());
 		
 		// call app init (on this thread)
-		Log.log("app.init()");
+		// it's basically a second constructor
 		try {
 			app.init();
-		} catch (Throwable t) {
-			System.err.println("Exception in Application init method");
-			t.printStackTrace(System.err);
-			keepRendering = false;
-		}
-		
-		if (!keepRendering) {
-			return typedApp;
+		} catch (Exception ex) {
+			throw new RuntimeException(ex);
 		}
 		
 		// call app start (on the FX thread)
-		Log.log("app.start()");
-		PlatformImpl.runAndWait(() -> {
-			try {
-				
-				// make the sage
-				Stage primaryStage = new Stage();
-				primaryStage.impl_setPrimary(true);
-				app.start(primaryStage);
-				
-			} catch (Throwable t) {
-				System.err.println("Exception in Application start method");
-				t.printStackTrace(System.err);
-				keepRendering = false;
-			}
+		runOnEventsThreadAndWait(() -> {
+			
+			// make the sage
+			Stage primaryStage = new Stage();
+			primaryStage.impl_setPrimary(true);
+			
+			// start() the app
+			app.start(primaryStage);
 		});
 		
-		if (!keepRendering) {
-			return typedApp;
-		}
-		
-		// setup app exit listener
-		finishListener = new PlatformImpl.FinishListener() {
-			
-			@Override
-			public void idle(boolean implicitExit) {
-				if (implicitExit) {
-					keepRendering = false;
-					return;
-				}
-			}
-
-			@Override
-			public void exitCalled() {
-				keepRendering = false;
-			}
-		};
-		PlatformImpl.addListener(finishListener);
+		// the app started. track it so we can stop it later
+		this.app = app;
 		
 		// make a context for the calling thread
 		// so it doesn't get confused about how to manage context lifecycles
 		context = new JFXGLContext(hwnd);
 		
-		return typedApp;
+		// listen for input events from GLFW
+		// NOTE: always keep a strong reference to GLFW callbacks, or they get garbage collected
+		ourCallbacks = new GLFWCallbacks();
+		existingCallbacks = new GLFWCallbacks();
+		
+		// TODO: allow main app to disable input forwarding
+		// NOTE: callbacks are called on the main thread, so forward to events thread when necessary
+		ourCallbacks.key = (long hwndAgain, int key, int scanCode, int action, int mods) -> {
+			if (existingCallbacks.key != null) {
+				existingCallbacks.key.invoke(hwnd, key, scanCode, action, mods);
+			}
+			if (JFXGLWindow.mainWindow != null) {
+				runOnEventsThread(() -> {
+					JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
+					if (view != null) {
+						view.handleGLFWKey(key, scanCode, action, mods);
+					}
+				});
+			}
+		};
+		existingCallbacks.key = GLFW.glfwSetKeyCallback(hwnd, ourCallbacks.key);
+		
+		ourCallbacks.keyChar = (long hwndAgain, int codepoint, int mods) -> {
+			if (existingCallbacks.keyChar != null) {
+				existingCallbacks.keyChar.invoke(hwnd, codepoint, mods);
+			}
+			if (JFXGLWindow.mainWindow != null) {
+				runOnEventsThread(() -> {
+					JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
+					if (view != null) {
+						view.handleGLFWKeyChar(codepoint, mods);
+					}
+				});
+			}
+		};
+		existingCallbacks.keyChar = GLFW.glfwSetCharModsCallback(hwnd, ourCallbacks.keyChar);
+		
+		ourCallbacks.cursorPos = (long hwndAgain, double xpos, double ypos) -> {
+			if (existingCallbacks.cursorPos != null) {
+				existingCallbacks.cursorPos.invoke(hwnd, xpos, ypos);
+			}
+			if (JFXGLWindow.mainWindow != null) {
+				runOnEventsThread(() -> {
+					JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
+					if (view != null) {
+						view.handleGLFWCursorPos(xpos, ypos);
+					}
+				});
+			}
+		};
+		existingCallbacks.cursorPos = GLFW.glfwSetCursorPosCallback(hwnd, ourCallbacks.cursorPos);
+		
+		ourCallbacks.mouseButton = (long hwndAgain, int button, int action, int mods) -> {
+			if (existingCallbacks.mouseButton != null) {
+				existingCallbacks.mouseButton.invoke(hwnd, button, action, mods);
+			}
+			if (JFXGLWindow.mainWindow != null) {
+				runOnEventsThread(() -> {
+					JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
+					if (view != null) {
+						view.handleGLFWMouseButton(button, action, mods);
+					}
+				});
+			}
+		};
+		existingCallbacks.mouseButton = GLFW.glfwSetMouseButtonCallback(hwnd, ourCallbacks.mouseButton);
+		
+		ourCallbacks.scroll = (long hwndAgain, double dx, double dy) -> {
+			if (existingCallbacks.scroll != null) {
+				existingCallbacks.scroll.invoke(hwnd, dx, dy);
+			}
+			if (JFXGLWindow.mainWindow != null) {
+				runOnEventsThread(() -> {
+					JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
+					if (view != null) {
+						view.handleGLFWScroll(dx, dy);
+					}
+				});
+			}
+		};
+		existingCallbacks.scroll = GLFW.glfwSetScrollCallback(hwnd, ourCallbacks.scroll);
+		
+		ourCallbacks.windowFocus = (long hwndAgain, boolean isFocused) -> {
+			if (existingCallbacks.windowFocus != null) {
+				existingCallbacks.windowFocus.invoke(hwnd, isFocused);
+			}
+			if (JFXGLWindow.mainWindow != null) {
+				runOnEventsThread(() -> {
+					JFXGLWindow.mainWindow.handleGLFWFocus(isFocused);
+				});
+			}
+		};
+		existingCallbacks.windowFocus = GLFW.glfwSetWindowFocusCallback(hwnd, ourCallbacks.windowFocus);
+	}
+	
+	public void runOnEventsThread(Runnable runnable) {
+		PlatformImpl.runLater(runnable);
+	}
+	
+	public void runOnEventsThreadAndWait(CheckedRunnable runnable) {
+		
+		AtomicReference<Throwable> eventsException = new AtomicReference<>(null);
+		
+		PlatformImpl.runAndWait(() -> {
+			try {
+				runnable.run();
+			} catch (Throwable t) {
+				eventsException.set(t);
+			}
+		});
+		
+		Throwable t = eventsException.get();
+		if (t != null) {
+			throw new RuntimeException(t);
+		}
 	}
 	
 	/**
@@ -168,107 +242,24 @@ public class JFXGL {
 	
 	public void terminate() {
 		
-		if (app != null) {
+		try {
 			
-			// call app stop (on the FX thread)
-			Log.log("app.stop()");
-			PlatformImpl.runAndWait(() -> {
-				try {
+			if (app != null) {
+				
+				// call app stop (on the FX thread)
+				runOnEventsThreadAndWait(() -> {
 					app.stop();
-				} catch (Throwable t) {
-					System.err.println("Exception in Application stop method");
-					t.printStackTrace(System.err);
-				}
-			});
-		}
+				});
+			}
 		
-		// platform cleanup
-		Log.log("platform cleanup");
-		PlatformImpl.removeListener(finishListener);
-		PlatformImpl.tkExit();
-		if (toolkit != null) {
-			toolkit.disposePipeline();
-		}
-		Log.log("platform finished");
-	}
-
-	public void key(int key, int scanCode, int action, int mods) {
-		
-		if (JFXGLWindow.mainWindow != null) {
+		} finally {
 			
-			// we're on the main thread, so send to events thread
-			PlatformImpl.runLater(() -> {
-				JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
-				if (view != null) {
-					view.handleGLFWKey(key, scanCode, action, mods);
-				}
-			});
-		}
-	}
-	
-	public void keyChar(int codepoint, int mods) {
-		if (JFXGLWindow.mainWindow != null) {
-			
-			// we're on the main thread, so send to events thread
-			PlatformImpl.runLater(() -> {
-				JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
-				if (view != null) {
-					view.handleGLFWKeyChar(codepoint, mods);
-				}
-			});
-		}
-	}
-
-	public void cursorPos(double x, double y) {
-		
-		if (JFXGLWindow.mainWindow != null) {
-			
-			// we're on the main thread, so send to events thread
-			PlatformImpl.runLater(() -> {
-				JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
-				if (view != null) {
-					view.handleGLFWCursorPos(x, y);
-				}
-			});
-		}
-	}
-
-	public void mouseButton(int button, int action, int mods) {
-		
-		if (JFXGLWindow.mainWindow != null) {
-			
-			// we're on the main thread, so send to events thread
-			PlatformImpl.runLater(() -> {
-				JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
-				if (view != null) {
-					view.handleGLFWMouseButton(button, action, mods);
-				}
-			});
-		}
-	}
-
-	public void scroll(double dx, double dy) {
-		
-		if (JFXGLWindow.mainWindow != null) {
-			
-			// we're on the main thread, so send to events thread
-			PlatformImpl.runLater(() -> {
-				JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
-				if (view != null) {
-					view.handleGLFWScroll(dx, dy);
-				}
-			});
-		}
-	}
-
-	public void focus(boolean isFocused) {
-		
-		if (JFXGLWindow.mainWindow != null) {
-			
-			// we're on the main thread, so send to events thread
-			PlatformImpl.runLater(() -> {
-				JFXGLWindow.mainWindow.handleGLFWFocus(isFocused);
-			});
+			// platform cleanup
+			PlatformImpl.removeListener(finishListener);
+			PlatformImpl.tkExit();
+			if (toolkit != null) {
+				toolkit.disposePipeline();
+			}
 		}
 	}
 }

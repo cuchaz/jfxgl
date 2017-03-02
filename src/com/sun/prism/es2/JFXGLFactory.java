@@ -4,8 +4,6 @@ import java.util.HashMap;
 
 import com.sun.prism.es2.GLPixelFormat.Attributes;
 
-import cuchaz.jfxgl.Log;
-
 public class JFXGLFactory extends GLFactory {
 	
 	// everything will always use the OpenGL context on the main thread
@@ -21,9 +19,6 @@ public class JFXGLFactory extends GLFactory {
 	}
 	
 	public static void init(long hwnd) {
-		
-		// TEMP
-		Log.log("JFXGLFactory.init() hwnd=" + hwnd);
 		
 		JFXGLFactory.hwnd = hwnd;
 		drawable = new JFXGLDrawable(hwnd);

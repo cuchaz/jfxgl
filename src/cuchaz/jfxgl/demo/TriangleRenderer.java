@@ -1,4 +1,4 @@
-package cuchaz.jfxgl;
+package cuchaz.jfxgl.demo;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;

@@ -12,7 +12,6 @@ import com.sun.glass.ui.View;
 
 import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
-import cuchaz.jfxgl.Log;
 import javafx.scene.input.KeyCode;
 
 public class JFXGLView extends View {
@@ -56,10 +55,6 @@ public class JFXGLView extends View {
 	@Override
 	@CalledByEventsThread
 	protected void _setParent(long hscreen, long hwnd) {
-		
-		// TEMP
-		Log.log("JFXGLView._setParent()   hwnd=%d", hwnd);
-		
 		this.window = (JFXGLWindow)super.getWindow();
 	}
 
@@ -70,8 +65,7 @@ public class JFXGLView extends View {
 
 	@Override
 	protected void _scheduleRepaint(long hscreen) {
-		// TEMP
-		Log.log("JFXGLView._scheduleRepaint()");
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
@@ -97,8 +91,7 @@ public class JFXGLView extends View {
 
 	@Override
 	protected void _uploadPixels(long hscreen, Pixels pixels) {
-		// TEMP
-		Log.log("JFXGLView._uploadPixels()");
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override

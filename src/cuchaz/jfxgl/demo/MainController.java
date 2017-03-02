@@ -1,7 +1,9 @@
-package cuchaz.jfxgl;
+package cuchaz.jfxgl.demo;
 
 import com.sun.javafx.application.PlatformImpl;
 
+import cuchaz.jfxgl.CalledByEventsThread;
+import cuchaz.jfxgl.CalledByMainThread;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
@@ -13,16 +15,14 @@ public class MainController {
 	@FXML private Slider rotationSlider;
 	@FXML private Label fpsLabel;
 	
+	private long startTimeNs;
+	
 	public volatile boolean isSpinning;
 	public volatile float rotationRadians;
 
 	@FXML
 	@CalledByEventsThread
 	public void initialize() {
-		
-		// init defaults
-		isSpinning = true;
-		spinCheck.selectedProperty().set(isSpinning);
 		
 		// listen for events
 		spinCheck.selectedProperty().addListener((observed, oldVal, newVal) -> {
@@ -32,12 +32,21 @@ public class MainController {
 		rotationSlider.valueProperty().addListener((observed, oldVal, newVal) -> {
 			rotationRadians = (float)Math.toRadians(newVal.doubleValue());
 		});
+		
+		// init defaults
+		isSpinning = true;
+		spinCheck.selectedProperty().set(isSpinning);
+		
+		// start the timer
+		startTimeNs = System.nanoTime();
 	}
 	
 	@CalledByMainThread
-	public float update(float elapsedS, float fps) {
+	public void update(float fps) {
 		
 		if (isSpinning) {
+			long elapsedNs = System.nanoTime() - startTimeNs;
+			float elapsedS = (float)elapsedNs/1000/1000/1000;
 			rotationRadians = (float)(elapsedS*Math.PI);
 		}
 		
@@ -56,7 +65,5 @@ public class MainController {
 			// update fps
 			fpsLabel.textProperty().set(String.format("FPS: %.1f", fps));
 		});
-		
-		return rotationRadians;
 	}
 }

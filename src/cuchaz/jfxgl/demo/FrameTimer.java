@@ -1,4 +1,4 @@
-package cuchaz.jfxgl;
+package cuchaz.jfxgl.demo;
 
 public class FrameTimer {
 
@@ -40,7 +40,6 @@ public class FrameTimer {
 			
 			// yup
 			fps = (float)numFrames*NSpS/elapsed;
-			System.out.println(String.format("FPS: %.1f", fps));
 			
 			// and reset the counters
 			startTime = now;

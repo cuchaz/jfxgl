@@ -19,7 +19,6 @@ import com.sun.prism.es2.ES2Pipeline;
 import com.sun.prism.impl.PrismSettings;
 import com.sun.scenario.DelayedRunnable;
 
-import cuchaz.jfxgl.Log;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 
@@ -35,9 +34,6 @@ public class JFXGLToolkit extends QuantumToolkit {
 	@Override
 	public boolean init() {
 		
-		// TEMP
-		Log.log("LWJGLToolkit.init()");
-
 		// create the opengl pipeline
 		GraphicsPipeline maybeAnyPipeline = GraphicsPipeline.createPipeline();
 		if (maybeAnyPipeline == null || !(maybeAnyPipeline instanceof ES2Pipeline)) {
@@ -68,9 +64,6 @@ public class JFXGLToolkit extends QuantumToolkit {
 	@Override
 	public void startup(Runnable r) {
 		
-		// TEMP
-		Log.log("LWJGLToolkit.startup()");
-		
 		CountDownLatch startupLatch = new CountDownLatch(1);
 		Application.run(() -> {
 			
@@ -85,9 +78,7 @@ public class JFXGLToolkit extends QuantumToolkit {
 			Application.GetApplication().setEventHandler(new Application.EventHandler() {
 				@Override
 				public void handleQuitAction(Application app, long time) {
-					// TODO: handle this?
-					Log.log("WARNING: ignoring LWJGLToolkit.startup().handleQuitAction()");
-					//com.sun.javafx.tk.quantum.GlassStage.requestClosingAllWindows();
+					throw new UnsupportedOperationException("implement me!");
 				}
 
 				@Override
@@ -112,8 +103,6 @@ public class JFXGLToolkit extends QuantumToolkit {
 		
 		// create OpenGL context for the main thread
 		ES2Pipeline.getDefaultResourceFactory();
-		// TEMP
-		Log.log("created OpenGL context");
 	}
 	
 	@Override
@@ -203,17 +192,17 @@ public class JFXGLToolkit extends QuantumToolkit {
 
 	@Override
 	public Object enterNestedEventLoop(Object key) {
-		throw new UnsupportedOperationException("nested event loops not implemented");
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
 	public void exitNestedEventLoop(Object key, Object rval) {
-		throw new UnsupportedOperationException("nested event loops not implemented");
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
 	public boolean isNestedLoopRunning() {
-		return false;
+		throw new UnsupportedOperationException("implement me!");
 	}
 	
 	@Override
