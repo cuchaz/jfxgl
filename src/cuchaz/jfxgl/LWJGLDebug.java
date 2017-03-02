@@ -4,9 +4,12 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 
+import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL43;
+import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.opengl.GLDebugMessageCallback;
+import org.lwjgl.opengl.KHRDebug;
 import org.lwjgl.system.APIUtil;
 import org.lwjgl.system.Callback;
 import org.lwjgl.system.MemoryUtil;
@@ -14,7 +17,7 @@ import org.lwjgl.system.MemoryUtil;
 public class LWJGLDebug {
 	
 	public static Callback enableDebugging() {
-		return enableDebugging(APIUtil.DEBUG_STREAM, GL43.GL_DEBUG_SEVERITY_HIGH, GL43.GL_DEBUG_SEVERITY_MEDIUM, GL43.GL_DEBUG_SEVERITY_LOW);
+		return enableDebugging(APIUtil.DEBUG_STREAM, GL43.GL_DEBUG_SEVERITY_HIGH);
 	}
 	
 	public static Callback enableDebugging(PrintStream stream, Integer ... exceptionSeverities) {
@@ -47,13 +50,11 @@ public class LWJGLDebug {
 			}
 		});
 		
-		/* do we need this?
+		// if supported, get java stack traces with opengl errors
 		GLCapabilities caps = GL.getCapabilities();
-		if (!caps.GL_KHR_debug) {
+		if (caps.GL_KHR_debug) {
 			GL11.glEnable(KHRDebug.GL_DEBUG_OUTPUT_SYNCHRONOUS);
-			KHRDebug.glDebugMessageCallback(proc, MemoryUtil.NULL);
 		}
-		*/
 		
 		// install the callback
 		GL43.glDebugMessageCallback(proc, MemoryUtil.NULL);
