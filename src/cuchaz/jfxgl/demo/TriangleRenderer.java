@@ -49,7 +49,7 @@ public class TriangleRenderer {
 			view = new Matrix4f();
 			view.identity();
 			projection = new Matrix4f();
-			float extra = 0.1f;
+			float extra = 0f;// TEMP 0.1f;
 			projection.setOrtho(
 				-0.5f - extra, 0.5f + extra,
 				0f - extra, 1f + extra,

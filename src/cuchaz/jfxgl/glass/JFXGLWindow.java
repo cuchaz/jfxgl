@@ -1,6 +1,5 @@
 package cuchaz.jfxgl.glass;
 
-import java.io.File;
 import java.nio.IntBuffer;
 
 import org.lwjgl.glfw.GLFW;
@@ -18,11 +17,10 @@ import com.sun.glass.ui.Window;
 import com.sun.javafx.application.PlatformImpl;
 import com.sun.prism.es2.JFXGLContext;
 import com.sun.prism.es2.JFXGLFactory;
-import com.sun.prism.es2.TexturedQuad;
+import com.sun.prism.es2.OffscreenBuffer;
 
 import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
-import cuchaz.jfxgl.TexTools;
 
 public class JFXGLWindow extends Window {
 	
@@ -38,11 +36,8 @@ public class JFXGLWindow extends Window {
 	
 	private int width = 0;
 	private int height = 0;
+	private OffscreenBuffer buf = null;
 	private boolean fboDirty = true;
-	private int texId = 0;
-	private int fboId = 0;
-	private TexturedQuad quad = null;
-	private TexturedQuad.Shader quadShader = null;
 	
 	private boolean isRendering = false;
 	
@@ -153,32 +148,16 @@ public class JFXGLWindow extends Window {
 		
 		if (context == null) {
 			context = new JFXGLContext(hwnd);
-			
-			quadShader = new TexturedQuad.Shader(context);
+			buf = new OffscreenBuffer(context, width, height);
 		}
 		
-		// do we need to make a new framebuffer?
+		// do we need to resize the framebuffer?
 		if (fboDirty) {
 			fboDirty = false;
-			
-			if (texId != 0) {
-				context.deleteTexture(texId);
-			}
-			if (fboId != 0) {
-				context.deleteFBO(fboId);
-			}
-			if (quad != null) {
-				quad.cleanup();
-			}
-			
-			texId = context.createTexture(width, height);
-			fboId = context.createFBO(texId);
-			quad = new TexturedQuad(0, 0, width, height, texId, quadShader);
-			quadShader.bind();
-			quadShader.setViewSize(width, height);
+			buf.resize(width, height);
 		}
 		
-		// init OpenGL state expected by JavaFX
+		// init OpenGL state expected by JavaFX rendering
 		GL11.glEnable(GL11.GL_BLEND);
 		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		
@@ -208,7 +187,7 @@ public class JFXGLWindow extends Window {
 	
 	@CalledByMainThread
 	public int getFBOId() {
-		return fboId;
+		return buf.getFboId();
 	}
 	
 	public void renderFramebuf() {
@@ -217,12 +196,8 @@ public class JFXGLWindow extends Window {
 		if (context != null) {
 			GL11.glEnable(GL11.GL_BLEND);
 			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-			quad.render();
+			buf.render();
 		}
-	}
-	
-	public void dumpFramebuf(File file) {
-		TexTools.dumpTexture(texId, file);
 	}
 	
 	// override these to disable the event thread check,
@@ -422,7 +397,7 @@ public class JFXGLWindow extends Window {
 		    case Cursor.CURSOR_RESIZE_UP: return GLFW.GLFW_VRESIZE_CURSOR;
 		    case Cursor.CURSOR_RESIZE_DOWN: return GLFW.GLFW_VRESIZE_CURSOR;
 		    case Cursor.CURSOR_RESIZE_LEFTRIGHT: return GLFW.GLFW_HRESIZE_CURSOR;
-		    case Cursor.CURSOR_RESIZE_UPDOWN: return GLFW.GLFW_HRESIZE_CURSOR;
+		    case Cursor.CURSOR_RESIZE_UPDOWN: return GLFW.GLFW_VRESIZE_CURSOR;
 		    case Cursor.CURSOR_DISAPPEAR: return GLFW.GLFW_ARROW_CURSOR;
 		    case Cursor.CURSOR_WAIT: return GLFW.GLFW_ARROW_CURSOR;
 		    case Cursor.CURSOR_RESIZE_SOUTHWEST: return GLFW.GLFW_ARROW_CURSOR;

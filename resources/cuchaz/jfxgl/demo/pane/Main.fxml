@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import cuchaz.jfxgl.controls.OpenGLPane?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="200.0" prefWidth="400.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cuchaz.jfxgl.demo.pane.MainController">
+   <center>
+      <SplitPane dividerPositions="0.0" orientation="VERTICAL" BorderPane.alignment="CENTER">
+         <items>
+            <HBox alignment="CENTER" prefWidth="200.0" spacing="20.0" styleClass="tool-bar">
+               <children>
+                  <CheckBox fx:id="spinCheck" mnemonicParsing="false" text="Spin" />
+                  <Slider fx:id="rotationSlider" blockIncrement="1.0" majorTickUnit="90.0" max="180.0" min="-180.0" prefWidth="300.0" showTickLabels="true" showTickMarks="true" />
+               </children>
+            </HBox>
+            <OpenGLPane fx:id="openglPane">
+               <children>
+                  <AnchorPane>
+                     <children>
+                        <Label fx:id="fpsLabel" layoutX="22.0" layoutY="21.0" prefHeight="16.0" prefWidth="92.0" text="FPS" textFill="WHITE" />
+                     </children>
+                  </AnchorPane>
+               </children>
+            </OpenGLPane>
+         </items>
+      </SplitPane>
+   </center>
+</BorderPane>

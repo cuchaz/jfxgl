@@ -21,6 +21,8 @@ public class TexturedQuad {
 		public final int posLoc;
 		public final int texCoordLoc;
 		private final int viewSizeLoc;
+		private final int viewPosLoc;
+		private final int yflipLoc;
 		
 		public Shader(JFXGLContext context) {
 			
@@ -39,10 +41,20 @@ public class TexturedQuad {
 			);
 			
 			viewSizeLoc = context.getUniformLocation(id, "viewSize");
+			viewPosLoc = context.getUniformLocation(id, "viewPos");
+			yflipLoc = context.getUniformLocation(id, "yflip");
+		}
+		
+		public void setViewPos(int x, int y) {
+			context.uniform2f(viewPosLoc, x, y);
 		}
 		
 		public void setViewSize(int width, int height) {
 			context.uniform2f(viewSizeLoc, width, height);
+		}
+		
+		public void setYFlip(boolean val) {
+			context.uniform1i(yflipLoc, val ? 1 : 0);
 		}
 		
 		public void bind() {

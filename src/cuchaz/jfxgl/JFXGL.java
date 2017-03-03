@@ -1,5 +1,7 @@
 package cuchaz.jfxgl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -21,6 +23,7 @@ import cuchaz.jfxgl.glass.JFXGLView;
 import cuchaz.jfxgl.glass.JFXGLWindow;
 import cuchaz.jfxgl.toolkit.JFXGLToolkit;
 import javafx.application.Application;
+import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class JFXGL {
@@ -37,6 +40,8 @@ public class JFXGL {
 		public GLFWScrollCallbackI scroll = null;
 		public GLFWWindowFocusCallbackI windowFocus = null;
 	}
+	
+	public final List<Scene> alwaysRepaintScenes = new ArrayList<>();
 	
 	private JFXGLToolkit toolkit;
 	private Application app;
@@ -198,6 +203,11 @@ public class JFXGL {
 			}
 		};
 		existingCallbacks.windowFocus = GLFW.glfwSetWindowFocusCallback(hwnd, ourCallbacks.windowFocus);
+		
+		// init the app if it wants
+		if (app instanceof JFXGLApplication) {
+			((JFXGLApplication) app).initJFXGL(this);
+		}
 	}
 	
 	public void runOnEventsThread(Runnable runnable) {
@@ -232,6 +242,11 @@ public class JFXGL {
 	}
 
 	public void render() {
+		
+		// make sure these scenes always get repainted
+		for (Scene scene : alwaysRepaintScenes) {
+			com.sun.javafx.tk.quantum.PackageAccessor.addRepaintSceneRenderJob(scene);
+		}
 		
 		// tell JavaFX stages and scenes to update and send render jobs (on the FX thread)
 		toolkit.postPulse();
