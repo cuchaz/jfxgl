@@ -2,9 +2,11 @@
 <classpath>
 	<classpathentry kind="src" output="build/output/def-bin" path="build/def"/>
 	<classpathentry including="**/*" kind="src" path="src"/>
-	<classpathentry kind="src" path="resources"/>
-	<classpathentry exported="true" kind="src" path="/graphics"/>
-	<classpathentry exported="true" kind="src" path="/fxml"/>
+	<classpathentry including="**/*" kind="src" path="resources"/>
+	<classpathentry kind="lib" path="/home/jeff/openjfx/openjfx/modules/controls/bin"/>
+	<classpathentry kind="lib" path="/home/jeff/openjfx/openjfx/modules/fxml/bin"/>
+	<classpathentry kind="lib" path="/home/jeff/openjfx/openjfx/modules/graphics/bin" sourcepath="/graphics"/>
+	<classpathentry kind="lib" path="/home/jeff/openjfx/openjfx/modules/base/bin"/>
 	<classpathentry kind="var" path="JERKAR_REPO/ar.com.hjg/pngj/jars/pngj-2.1.0.jar" sourcepath="JERKAR_REPO/ar.com.hjg/pngj/sources/pngj-2.1.0-sources.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:file://home/jeff/.jerkar/cache/repo/ar.com.hjg/pngj/javadocs/pngj-2.1.0-javadoc.jar"/>
