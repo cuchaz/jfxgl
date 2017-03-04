@@ -1,4 +1,4 @@
-package cuchaz.jfxgl.toolkit;
+package com.sun.javafx.tk.quantum;
 
 import java.security.AccessControlContext;
 import java.util.Map;
@@ -13,12 +13,12 @@ import com.sun.javafx.embed.HostInterface;
 import com.sun.javafx.tk.AppletWindow;
 import com.sun.javafx.tk.RenderJob;
 import com.sun.javafx.tk.TKStage;
-import com.sun.javafx.tk.quantum.QuantumToolkit;
 import com.sun.prism.GraphicsPipeline;
 import com.sun.prism.es2.ES2Pipeline;
 import com.sun.prism.impl.PrismSettings;
 import com.sun.scenario.DelayedRunnable;
 
+import javafx.scene.Scene;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 
@@ -26,7 +26,7 @@ public class JFXGLToolkit extends QuantumToolkit {
 	
 	private ES2Pipeline pipeline;
 	private JFXGLRenderer renderer;
-	private JFXGLPaintCollector paintCollector;
+	private PaintCollector paintCollector;
 	private AtomicBoolean pulseRequested;
 	private AtomicBoolean animationRunning;
 	private DelayedRunnable animationRunnable;
@@ -53,7 +53,7 @@ public class JFXGLToolkit extends QuantumToolkit {
 		com.sun.glass.ui.Application.setDeviceDetails(deviceDetails);
 		
 		renderer = new JFXGLRenderer();
-		paintCollector = new JFXGLPaintCollector(this);
+		paintCollector = PaintCollector.createInstance(this);
 		pulseRequested = new AtomicBoolean(false);
 		animationRunning = new AtomicBoolean(false);
 		animationRunnable = null;
@@ -142,6 +142,12 @@ public class JFXGLToolkit extends QuantumToolkit {
 		animationRunnable = val;
 	}
 
+	public void addRepaintSceneRenderJob(Scene scene) {
+		@SuppressWarnings("deprecation")
+		ViewScene viewScene = (ViewScene)scene.impl_getPeer();
+		viewScene.repaint();
+	}
+	
 	@Override
 	@SuppressWarnings("rawtypes")
 	public Future addRenderJob(RenderJob r) {
@@ -164,7 +170,8 @@ public class JFXGLToolkit extends QuantumToolkit {
 		Application app = Application.GetApplication();
 		app.terminate();
 		
-		clearFxUserThread();
+		// clear the fx user thread in the toolkit
+		ToolkitAccessor.setFxUserThread(null);
 	}
 
 	public void disposePipeline() {
@@ -207,31 +214,32 @@ public class JFXGLToolkit extends QuantumToolkit {
 	
 	@Override
 	public TKStage createTKPopupStage(Window peerWindow, StageStyle popupStyle, TKStage owner, AccessControlContext acc) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
 	public TKStage createTKEmbeddedStage(HostInterface host, AccessControlContext acc) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
 	public AppletWindow createAppletWindow(long parent, String serverName) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
 	public void closeAppletWindow() {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 
 	@Override
 	public void waitFor(Task t) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("implement me!");
 	}
 	
 	@Override
 	public boolean isVsyncEnabled() {
+		// TODO: implement vsync?
 		return false;
 	}
 }

@@ -13,15 +13,15 @@ import org.lwjgl.glfw.GLFWMouseButtonCallbackI;
 import org.lwjgl.glfw.GLFWScrollCallbackI;
 import org.lwjgl.glfw.GLFWWindowFocusCallbackI;
 
+import com.sun.glass.ui.JFXGLView;
+import com.sun.glass.ui.JFXGLWindow;
 import com.sun.javafx.application.ParametersImpl;
 import com.sun.javafx.application.PlatformImpl;
 import com.sun.javafx.tk.Toolkit;
+import com.sun.javafx.tk.quantum.JFXGLToolkit;
 import com.sun.prism.es2.JFXGLContext;
 import com.sun.prism.es2.JFXGLFactory;
 
-import cuchaz.jfxgl.glass.JFXGLView;
-import cuchaz.jfxgl.glass.JFXGLWindow;
-import cuchaz.jfxgl.toolkit.JFXGLToolkit;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -56,7 +56,6 @@ public class JFXGL {
 		// install our glass,toolkit,prism implementations to JavaFX
 		System.setProperty("glass.platform", "JFXGL");
 		System.setProperty("javafx.toolkit", JFXGLToolkit.class.getName());
-		System.setProperty("prism.es2.GLFactory", JFXGLFactory.class.getName());
 		System.setProperty("prism.order", "es2");
 		
 		// TEMP: turn on prism logging so we can see pipeline create/init errors
@@ -245,7 +244,7 @@ public class JFXGL {
 		
 		// make sure these scenes always get repainted
 		for (Scene scene : alwaysRepaintScenes) {
-			com.sun.javafx.tk.quantum.PackageAccessor.addRepaintSceneRenderJob(scene);
+			toolkit.addRepaintSceneRenderJob(scene);
 		}
 		
 		// tell JavaFX stages and scenes to update and send render jobs (on the FX thread)

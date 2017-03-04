@@ -1,12 +1,11 @@
-package cuchaz.jfxgl.toolkit;
+package com.sun.javafx.tk.quantum;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
+import com.sun.glass.ui.JFXGLWindow;
 import com.sun.javafx.tk.quantum.QuantumRenderer;
-
-import cuchaz.jfxgl.glass.JFXGLWindow;
 
 public class JFXGLRenderer extends QuantumRenderer {
 	
@@ -20,7 +19,7 @@ public class JFXGLRenderer extends QuantumRenderer {
 		jobs = new ArrayList<>();
 		
 		// install to the QuantumRenderer singleton
-		QuantumRenderer.install(this);
+		RendererAccessor.setRendererInstance(this);
 	}
 	
 	@Override

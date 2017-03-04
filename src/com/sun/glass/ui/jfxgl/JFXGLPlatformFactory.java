@@ -2,6 +2,7 @@ package com.sun.glass.ui.jfxgl;
 
 import com.sun.glass.ui.Application;
 import com.sun.glass.ui.Clipboard;
+import com.sun.glass.ui.JFXGLApplication;
 import com.sun.glass.ui.Menu;
 import com.sun.glass.ui.MenuBar;
 import com.sun.glass.ui.MenuItem;
@@ -10,8 +11,6 @@ import com.sun.glass.ui.delegate.ClipboardDelegate;
 import com.sun.glass.ui.delegate.MenuBarDelegate;
 import com.sun.glass.ui.delegate.MenuDelegate;
 import com.sun.glass.ui.delegate.MenuItemDelegate;
-
-import cuchaz.jfxgl.glass.JFXGLApplication;
 
 public class JFXGLPlatformFactory extends PlatformFactory {
 

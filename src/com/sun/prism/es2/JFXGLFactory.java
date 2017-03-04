@@ -1,10 +1,14 @@
 package com.sun.prism.es2;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 
 import com.sun.prism.es2.GLPixelFormat.Attributes;
 
 public class JFXGLFactory extends GLFactory {
+	
+	@SuppressWarnings("unused")
+	private static GLFactory oldGLFactory;
 	
 	// everything will always use the OpenGL context on the main thread
 	// so make our context/drawable instances singletons
@@ -19,6 +23,18 @@ public class JFXGLFactory extends GLFactory {
 	}
 	
 	public static void init(long hwnd) {
+		
+		// just loading this class should call the GLFactory static initializer
+		// so now we can mess with the "platformFactory" variable
+		// keep the old factory in case we want to use the GLContext JavaFX would have normally created
+		try {
+			Field platformFactoryField = GLFactory.class.getDeclaredField("platformFactory");
+			platformFactoryField.setAccessible(true);
+			oldGLFactory = (GLFactory)platformFactoryField.get(null);
+			platformFactoryField.set(null, new JFXGLFactory());
+		} catch (Exception ex) {
+			throw new Error(ex);
+		}
 		
 		JFXGLFactory.hwnd = hwnd;
 		drawable = new JFXGLDrawable(hwnd);
