@@ -1,11 +1,13 @@
-package com.sun.javafx.tk.quantum;
+package cuchaz.jfxgl.toolkit;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import com.sun.glass.ui.JFXGLWindow;
+import com.sun.javafx.tk.RenderJob;
 import com.sun.javafx.tk.quantum.QuantumRenderer;
+
+import cuchaz.jfxgl.glass.JFXGLWindow;
 
 public class JFXGLRenderer extends QuantumRenderer {
 	
@@ -19,7 +21,7 @@ public class JFXGLRenderer extends QuantumRenderer {
 		jobs = new ArrayList<>();
 		
 		// install to the QuantumRenderer singleton
-		RendererAccessor.setRendererInstance(this);
+		QuantumRenderer.instanceReference.set(this);
 	}
 	
 	@Override
@@ -32,6 +34,12 @@ public class JFXGLRenderer extends QuantumRenderer {
 		
 		// no one uses the Future instance
 		return null;
+	}
+	
+	@Override
+	@SuppressWarnings("rawtypes")
+	public Future submitRenderJob(RenderJob r) {
+		return super.submitRenderJob(r);
 	}
 	
 	@Override

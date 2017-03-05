@@ -1,5 +1,6 @@
-package com.sun.glass.ui;
+package cuchaz.jfxgl.glass;
 
+import java.io.File;
 import java.nio.IntBuffer;
 
 import org.lwjgl.glfw.GLFW;
@@ -15,12 +16,11 @@ import com.sun.glass.ui.Screen;
 import com.sun.glass.ui.View;
 import com.sun.glass.ui.Window;
 import com.sun.javafx.application.PlatformImpl;
-import com.sun.prism.es2.JFXGLContext;
-import com.sun.prism.es2.JFXGLFactory;
-import com.sun.prism.es2.OffscreenBuffer;
 
 import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
+import cuchaz.jfxgl.prism.JFXGLContext;
+import cuchaz.jfxgl.prism.OffscreenBuffer;
 
 public class JFXGLWindow extends Window {
 	
@@ -57,7 +57,7 @@ public class JFXGLWindow extends Window {
 		
 		// and don't actually create it either
 		// use the one that was already created by the main thread
-		hwnd = JFXGLFactory.getHwnd();
+		hwnd = JFXGLContext.get().getHwnd();
 		
 		// NOTE: always keep a strong reference to callbacks, or they get garbage collected
 		windowSizeCallback = (long hwndAgain, int width, int height) -> {
@@ -147,7 +147,7 @@ public class JFXGLWindow extends Window {
 		}
 		
 		if (context == null) {
-			context = new JFXGLContext(hwnd);
+			context = JFXGLContext.get();
 			buf = new OffscreenBuffer(context, width, height);
 		}
 		
@@ -198,6 +198,10 @@ public class JFXGLWindow extends Window {
 			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 			buf.render();
 		}
+	}
+	
+	public void dump(File file) {
+		buf.dump(file);
 	}
 	
 	// override these to disable the event thread check,

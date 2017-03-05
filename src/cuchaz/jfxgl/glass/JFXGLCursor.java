@@ -1,4 +1,4 @@
-package com.sun.glass.ui;
+package cuchaz.jfxgl.glass;
 
 import com.sun.glass.ui.Cursor;
 import com.sun.glass.ui.Pixels;

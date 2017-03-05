@@ -45,5 +45,7 @@ public class DemoApp extends Application implements JFXGLApplication {
 		
 		// since we're using an OpenGLPane, make sure our scene always gets repainted
 		jfxgl.alwaysRepaintScenes.add(scene);
+		
+		controller.initJFXGL(jfxgl);
 	}
 }

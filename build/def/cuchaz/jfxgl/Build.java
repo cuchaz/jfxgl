@@ -64,6 +64,7 @@ public class Build extends JkJavaBuild {
 			// 3rd-party libs
 			.on("ar.com.hjg:pngj:2.1.0")
 			.on("org.joml:joml:1.9.2")
+			.on("org.ow2.asm:asm:5.2")
 			
 			// LWJGL
 			.on(         "org.lwjgl:lwjgl:" + LWJGLVersion)

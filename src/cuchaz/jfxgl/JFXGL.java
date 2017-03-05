@@ -13,20 +13,27 @@ import org.lwjgl.glfw.GLFWMouseButtonCallbackI;
 import org.lwjgl.glfw.GLFWScrollCallbackI;
 import org.lwjgl.glfw.GLFWWindowFocusCallbackI;
 
-import com.sun.glass.ui.JFXGLView;
-import com.sun.glass.ui.JFXGLWindow;
 import com.sun.javafx.application.ParametersImpl;
 import com.sun.javafx.application.PlatformImpl;
 import com.sun.javafx.tk.Toolkit;
-import com.sun.javafx.tk.quantum.JFXGLToolkit;
-import com.sun.prism.es2.JFXGLContext;
-import com.sun.prism.es2.JFXGLFactory;
 
+import cuchaz.jfxgl.glass.JFXGLPlatformFactory;
+import cuchaz.jfxgl.glass.JFXGLView;
+import cuchaz.jfxgl.glass.JFXGLWindow;
+import cuchaz.jfxgl.prism.JFXGLContext;
+import cuchaz.jfxgl.prism.JFXGLFactory;
+import cuchaz.jfxgl.toolkit.JFXGLToolkit;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class JFXGL {
+	
+	static {
+		// need to run tweakers as soon as possible
+		// so we get there before the classes are naturally loaded
+		JFXGLTweaker.tweak();
+	}
 
 	public static interface CheckedRunnable {
 		void run() throws Exception;
@@ -46,23 +53,23 @@ public class JFXGL {
 	private JFXGLToolkit toolkit;
 	private Application app;
 	private PlatformImpl.FinishListener finishListener;
-	private JFXGLContext context;
 	private GLFWCallbacks ourCallbacks;
 	private GLFWCallbacks existingCallbacks;
 	
 	@SuppressWarnings("deprecation")
 	public void start(long hwnd, String[] args, Application app) {
 		
-		// install our glass,toolkit,prism implementations to JavaFX
-		System.setProperty("glass.platform", "JFXGL");
-		System.setProperty("javafx.toolkit", JFXGLToolkit.class.getName());
+		// make sure JavaFX is using the OpenGL prism backend
 		System.setProperty("prism.order", "es2");
 		
-		// TEMP: turn on prism logging so we can see pipeline create/init errors
+		// DEBUG: turn on prism logging so we can see pipeline create/init errors
 		//System.setProperty("prism.verbose", "true");
 		
-		// there's ever only going to be one window, so save the handle globally
-		JFXGLFactory.init(hwnd);
+		// install our various pieces into JavaFX
+		JFXGLContext.install(hwnd);
+		JFXGLFactory.install();
+		JFXGLPlatformFactory.install();
+		JFXGLToolkit.install();
 		
 		try {
 			
@@ -104,10 +111,6 @@ public class JFXGL {
 		
 		// the app started. track it so we can stop it later
 		this.app = app;
-		
-		// make a context for the calling thread
-		// so it doesn't get confused about how to manage context lifecycles
-		context = new JFXGLContext(hwnd);
 		
 		// listen for input events from GLFW
 		// NOTE: always keep a strong reference to GLFW callbacks, or they get garbage collected
@@ -237,7 +240,8 @@ public class JFXGL {
 	 * you don't have anything better already.
 	 */
 	public JFXGLContext getContext() {
-		return context;
+		// convenience method so the user app doesn't get confused about how to manage context lifecycles
+		return JFXGLContext.get();
 	}
 
 	public void render() {

@@ -10,7 +10,7 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryStack;
 
-import com.sun.prism.es2.JFXGLContext;
+import cuchaz.jfxgl.prism.JFXGLContext;
 
 public class TriangleRenderer {
 	

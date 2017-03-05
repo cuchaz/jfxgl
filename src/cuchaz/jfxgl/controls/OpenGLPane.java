@@ -5,12 +5,11 @@ import org.lwjgl.opengl.GL11;
 import com.sun.javafx.sg.prism.NGNode;
 import com.sun.javafx.sg.prism.NGRegion;
 import com.sun.prism.Graphics;
-import com.sun.prism.es2.JFXGLContext;
-import com.sun.prism.es2.JFXGLFactory;
-import com.sun.prism.es2.OffscreenBuffer;
 
 import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
+import cuchaz.jfxgl.prism.JFXGLContext;
+import cuchaz.jfxgl.prism.OffscreenBuffer;
 import javafx.scene.layout.StackPane;
 
 public class OpenGLPane extends StackPane {
@@ -47,6 +46,9 @@ public class OpenGLPane extends StackPane {
 			
 			if (pane.renderer != null) {
 				
+				// TODO: apparently JavaFX already allocated a framebuf for this?
+				// use that instead of our own?
+				
 				GL11.glPushAttrib(GLBackupBits);
 				
 				// go back to a semi-normal OpenGL state
@@ -63,7 +65,8 @@ public class OpenGLPane extends StackPane {
 				int w = g.getClipRect().width;
 				int h = g.getClipRect().height;
 				
-				JFXGLContext context = JFXGLFactory.getContext();
+				JFXGLContext context = JFXGLContext.get();
+				int oldFboId = context.getBoundFBO();
 				
 				// do we need to resize the buffer?
 				if (buf == null) {
@@ -73,7 +76,7 @@ public class OpenGLPane extends StackPane {
 				}
 				
 				// call the downstream renderer
-				int oldFboId = buf.bind();
+				buf.bind();
 				context.updateViewportAndDepthTest(0, 0, w, h, false);
 				pane.renderer.run();
 				buf.unbind(oldFboId);

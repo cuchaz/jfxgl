@@ -1,4 +1,4 @@
-package com.sun.glass.ui;
+package cuchaz.jfxgl.glass;
 
 import java.util.HashMap;
 import java.util.Map;

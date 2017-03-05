@@ -1,4 +1,4 @@
-package com.sun.prism.es2;
+package cuchaz.jfxgl.prism;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;

@@ -1,60 +1,24 @@
-package com.sun.prism.es2;
+package cuchaz.jfxgl.prism;
 
-import java.lang.reflect.Field;
 import java.util.HashMap;
 
-import com.sun.prism.es2.GLPixelFormat.Attributes;
+import com.sun.prism.es2.GLContext;
+import com.sun.prism.es2.GLDrawable;
+import com.sun.prism.es2.GLFactory;
+import com.sun.prism.es2.GLGPUInfo;
+import com.sun.prism.es2.GLPixelFormat;
 
 public class JFXGLFactory extends GLFactory {
 	
-	@SuppressWarnings("unused")
-	private static GLFactory oldGLFactory;
-	
-	// everything will always use the OpenGL context on the main thread
-	// so make our context/drawable instances singletons
-	private static long hwnd;
 	private static JFXGLDrawable drawable;
-	private static JFXGLContext context;
 	
 	static {
-		hwnd = 0;
 		drawable = null;
-		context = null;
 	}
 	
-	public static void init(long hwnd) {
-		
-		// just loading this class should call the GLFactory static initializer
-		// so now we can mess with the "platformFactory" variable
-		// keep the old factory in case we want to use the GLContext JavaFX would have normally created
-		try {
-			Field platformFactoryField = GLFactory.class.getDeclaredField("platformFactory");
-			platformFactoryField.setAccessible(true);
-			oldGLFactory = (GLFactory)platformFactoryField.get(null);
-			platformFactoryField.set(null, new JFXGLFactory());
-		} catch (Exception ex) {
-			throw new Error(ex);
-		}
-		
-		JFXGLFactory.hwnd = hwnd;
-		drawable = new JFXGLDrawable(hwnd);
-		context = new JFXGLContext(hwnd);
-	}
-	
-	private static void checkInit() {
-		if (hwnd <= 0) {
-			throw new IllegalStateException("JFXGLFactory has not been initialized yet. Call JFXGLFactory.init(hwnd)");
-		}
-	}
-	
-	public static long getHwnd() {
-		checkInit();
-		return hwnd;
-	}
-	
-	public static JFXGLContext getContext() {
-		checkInit();
-		return context;
+	public static void install() {
+		drawable = new JFXGLDrawable(JFXGLContext.get().getHwnd());
+		GLFactory.platformFactory = new JFXGLFactory();
 	}
 	
 	@Override
@@ -72,12 +36,12 @@ public class JFXGLFactory extends GLFactory {
 
 	@Override
 	public JFXGLContext createGLContext(long hwnd) {
-		return context;
+		return JFXGLContext.get();
 	}
 
 	@Override
 	public JFXGLContext createGLContext(GLDrawable drawable, GLPixelFormat pixelFormat, GLContext shareCtx, boolean vSyncRequest) {
-		return context;
+		return JFXGLContext.get();
 	}
 
 	@Override
@@ -91,20 +55,20 @@ public class JFXGLFactory extends GLFactory {
 	}
 
 	@Override
-	GLPixelFormat createGLPixelFormat(long nativeScreen, Attributes attrs) {
+	public GLPixelFormat createGLPixelFormat(long nativeScreen, GLPixelFormat.Attributes attrs) {
 		// don't need to wrap pixel format, only consumed by Drawables
 		return null;
 	}
 
 	@Override
 	@SuppressWarnings("rawtypes")
-	public boolean initialize(Class psClass, Attributes attrs) {
+	public boolean initialize(Class psClass, GLPixelFormat.Attributes attrs) {
 		
 		// NOTE: exceptions here get swallowed by GraphicsPipeline.createPipeline()
 		// so report them here explicitly
 		try {
 			
-			nativeCtxInfo = hwnd;
+			nativeCtxInfo = JFXGLContext.get().getHwnd();
             gl2 = true;
 		
 		} catch (Throwable t) {
@@ -138,7 +102,7 @@ public class JFXGLFactory extends GLFactory {
 	
 	@Override
 	public boolean isGLExtensionSupported(String sglExtStr) {
-		return context.isExtensionSupported(sglExtStr);
+		return JFXGLContext.get().isExtensionSupported(sglExtStr);
 	}
 	
 	@Override

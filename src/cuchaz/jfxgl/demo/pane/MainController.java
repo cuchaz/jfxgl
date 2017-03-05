@@ -3,10 +3,10 @@ package cuchaz.jfxgl.demo.pane;
 import org.lwjgl.opengl.GL11;
 
 import com.sun.javafx.application.PlatformImpl;
-import com.sun.prism.es2.JFXGLFactory;
 
 import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
+import cuchaz.jfxgl.JFXGL;
 import cuchaz.jfxgl.controls.OpenGLPane;
 import cuchaz.jfxgl.demo.FrameTimer;
 import cuchaz.jfxgl.demo.TriangleRenderer;
@@ -57,6 +57,11 @@ public class MainController {
 	}
 	
 	@CalledByMainThread
+	public void initJFXGL(JFXGL jfxgl) {
+		triangle = new TriangleRenderer(jfxgl.getContext());
+	}
+	
+	@CalledByMainThread
 	public void render() {
 		
 		long nowMs = System.nanoTime()/1000/1000;
@@ -87,12 +92,9 @@ public class MainController {
 			});
 		}
 		
+		// render the triangle!
 		GL11.glClearColor(0, 0, 0, 1);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
-		
-		if (triangle == null) {
-			triangle = new TriangleRenderer(JFXGLFactory.getContext());
-		}
 		triangle.render(rotationRadians);
 		
 		timer.update();

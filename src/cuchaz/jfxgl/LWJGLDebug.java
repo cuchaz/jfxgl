@@ -121,4 +121,16 @@ public class LWJGLDebug {
 				return "(unknown: " + severity + ")";
 		}
 	}
+	
+	/** useful for annotating apitrace logs */
+	public static void trace(String msg) {
+		int id = 0;
+		GL43.glDebugMessageInsert(
+			GL43.GL_DEBUG_SOURCE_APPLICATION,
+			GL43.GL_DEBUG_TYPE_MARKER,
+			id,
+			GL43.GL_DEBUG_SEVERITY_NOTIFICATION,
+			msg
+		);
+	}
 }

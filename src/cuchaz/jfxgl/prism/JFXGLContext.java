@@ -1,4 +1,4 @@
-package com.sun.prism.es2;
+package cuchaz.jfxgl.prism;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +9,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import org.lwjgl.BufferUtils;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -22,31 +23,57 @@ import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
 
 import com.sun.prism.Texture.WrapMode;
+import com.sun.prism.es2.GLContext;
+import com.sun.prism.es2.GLDrawable;
 import com.sun.prism.paint.Color;
 
+import sun.misc.IOUtils;
+
 public class JFXGLContext extends GLContext {
+	
+	// everything will always use the OpenGL context on the main thread
+	// so make our context instance a singleton
+	protected static JFXGLContext instance;
 	
 	private long hwnd;
 	private GLCapabilities caps;
 	
-	public JFXGLContext(long hwnd) {
+	public static void install(long hwnd) {
+		instance = new JFXGLContext(hwnd);
+	}
+	
+	public static JFXGLContext get() {
+		if (instance == null) {
+			throw new IllegalStateException("JFXGLContext not initialized yet. Call init(hwnd) first.");
+		}
+		return instance;
+	}
+	
+	protected JFXGLContext(long hwnd) {
 		
 		if (hwnd <= 0) {
 			throw new IllegalArgumentException("hwnd is invalid");
 		}
 		
 		this.hwnd = hwnd;
+		
+		// create the OpenGL context
+		GLFW.glfwMakeContextCurrent(this.hwnd);
 		this.caps = GL.createCapabilities();
+	}
+	
+	public long getHwnd() {
+		return hwnd;
 	}
 
 	@Override
 	public long getNativeHandle() {
-		return hwnd;
+		return getHwnd();
 	}
 	
 	@Override
 	public long getNativeCtxInfo() {
-		return hwnd;
+		return getHwnd();
 	}
 
 	@Override
@@ -135,7 +162,7 @@ public class JFXGLContext extends GLContext {
 
 	public int compileShader(URL url, boolean isVertex) {
 		try (InputStream in = url.openStream()) {
-			String source = ES2Shader.readStreamIntoString(in);
+			String source = new String(IOUtils.readFully(in, -1, true));
 			return compileShader(source, isVertex);
 		} catch (IOException ex) {
 			throw new RuntimeException("can't compile shader at: " + url, ex);
@@ -212,7 +239,7 @@ public class JFXGLContext extends GLContext {
 			// remove garbage from newly-allocated buffers
 			clearBuffers(Color.TRANSPARENT, true, false, true);
 		}
-
+		
 		return id;
 	}
 
@@ -341,6 +368,7 @@ public class JFXGLContext extends GLContext {
 		throw new UnsupportedOperationException("IMPLEMENT ME!");
 	}
 
+	@Override
 	public int getUniformLocation(int programID, String name) {
 		return GL20.glGetUniformLocation(programID, name);
 	}
@@ -584,7 +612,7 @@ public class JFXGLContext extends GLContext {
 	public void uniformMatrix4fv(int location, boolean transpose, float values[]) {
 		GL20.glUniformMatrix4fv(location, transpose, values);
 	}
-
+	
 	@Override
 	public void enableVertexAttributes() {
 		// JavaFX apparently uses attributes in [0,3]
@@ -863,9 +891,9 @@ public class JFXGLContext extends GLContext {
 			case GL30.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
 				return "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
 			/* doesn't look like we have these constants
-			case GL30.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT:
+			case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT:
 				return "GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT";
-			case GL30.GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT:
+			case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT:
 				return "GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT";
 			*/
 			case GL30.GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
@@ -946,6 +974,7 @@ public class JFXGLContext extends GLContext {
 		buf = manageBufferSize(buf, numBytesNeeded);
 		buf.clear();
 		buf.asFloatBuffer().put(data, 0, numBytesNeeded/Float.BYTES);
+		buf.position(numBytesNeeded); // apparently pos doesn't get updated by asFloatBuffer
 		buf.flip();
 		return buf;
 	}

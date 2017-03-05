@@ -1,4 +1,4 @@
-package com.sun.javafx.tk.quantum;
+package cuchaz.jfxgl.toolkit;
 
 import java.security.AccessControlContext;
 import java.util.Map;
@@ -13,6 +13,9 @@ import com.sun.javafx.embed.HostInterface;
 import com.sun.javafx.tk.AppletWindow;
 import com.sun.javafx.tk.RenderJob;
 import com.sun.javafx.tk.TKStage;
+import com.sun.javafx.tk.Toolkit;
+import com.sun.javafx.tk.quantum.QuantumToolkit;
+import com.sun.javafx.tk.quantum.ViewScene;
 import com.sun.prism.GraphicsPipeline;
 import com.sun.prism.es2.ES2Pipeline;
 import com.sun.prism.impl.PrismSettings;
@@ -24,9 +27,15 @@ import javafx.stage.Window;
 
 public class JFXGLToolkit extends QuantumToolkit {
 	
+	public static void install() {
+		JFXGLToolkit tk = new JFXGLToolkit();
+		tk.init();
+		Toolkit.TOOLKIT = tk;
+	}
+	
 	private ES2Pipeline pipeline;
 	private JFXGLRenderer renderer;
-	private PaintCollector paintCollector;
+	private JFXGLPaintCollector paintCollector;
 	private AtomicBoolean pulseRequested;
 	private AtomicBoolean animationRunning;
 	private DelayedRunnable animationRunnable;
@@ -36,8 +45,10 @@ public class JFXGLToolkit extends QuantumToolkit {
 		
 		// create the opengl pipeline
 		GraphicsPipeline maybeAnyPipeline = GraphicsPipeline.createPipeline();
-		if (maybeAnyPipeline == null || !(maybeAnyPipeline instanceof ES2Pipeline)) {
-			throw new RuntimeException("JavaFX OpenGL initialization failed");
+		if (maybeAnyPipeline == null) {
+			throw new RuntimeException("JavaFX render init failed to create a graphics pipeline");
+		} else if (!(maybeAnyPipeline instanceof ES2Pipeline)) {
+			throw new RuntimeException("JavaFX render init failed to create the OpenGL graphics pipeline");
 		}
 		pipeline = (ES2Pipeline)maybeAnyPipeline;
 
@@ -53,7 +64,7 @@ public class JFXGLToolkit extends QuantumToolkit {
 		com.sun.glass.ui.Application.setDeviceDetails(deviceDetails);
 		
 		renderer = new JFXGLRenderer();
-		paintCollector = PaintCollector.createInstance(this);
+		paintCollector = new JFXGLPaintCollector(this);
 		pulseRequested = new AtomicBoolean(false);
 		animationRunning = new AtomicBoolean(false);
 		animationRunnable = null;
@@ -159,6 +170,12 @@ public class JFXGLToolkit extends QuantumToolkit {
 	}
 	
 	@Override
+	public boolean shouldWaitForRenderingToComplete() {
+		// nope
+		return false;
+	}
+	
+	@Override
 	public void exit() {
 		
 		// we should be on the FX thread
@@ -171,7 +188,7 @@ public class JFXGLToolkit extends QuantumToolkit {
 		app.terminate();
 		
 		// clear the fx user thread in the toolkit
-		ToolkitAccessor.setFxUserThread(null);
+		fxUserThread = null;
 	}
 
 	public void disposePipeline() {
