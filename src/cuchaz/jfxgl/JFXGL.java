@@ -48,16 +48,20 @@ public class JFXGL {
 		public GLFWWindowFocusCallbackI windowFocus = null;
 	}
 	
-	public final List<Scene> alwaysRepaintScenes = new ArrayList<>();
+	public static final List<Scene> alwaysRepaintScenes = new ArrayList<>();
 	
-	private JFXGLToolkit toolkit;
-	private Application app;
-	private PlatformImpl.FinishListener finishListener;
-	private GLFWCallbacks ourCallbacks;
-	private GLFWCallbacks existingCallbacks;
+	private static JFXGLToolkit toolkit;
+	private static Application app;
+	private static PlatformImpl.FinishListener finishListener;
+	private static GLFWCallbacks ourCallbacks;
+	private static GLFWCallbacks existingCallbacks;
+	
+	private JFXGL() {
+		// static only class, don't instantiate
+	}
 	
 	@SuppressWarnings("deprecation")
-	public void start(long hwnd, String[] args, Application app) {
+	public static void start(long hwnd, String[] args, Application app) {
 		
 		// make sure JavaFX is using the OpenGL prism backend
 		System.setProperty("prism.order", "es2");
@@ -110,7 +114,7 @@ public class JFXGL {
 		});
 		
 		// the app started. track it so we can stop it later
-		this.app = app;
+		JFXGL.app = app;
 		
 		// listen for input events from GLFW
 		// NOTE: always keep a strong reference to GLFW callbacks, or they get garbage collected
@@ -205,18 +209,13 @@ public class JFXGL {
 			}
 		};
 		existingCallbacks.windowFocus = GLFW.glfwSetWindowFocusCallback(hwnd, ourCallbacks.windowFocus);
-		
-		// init the app if it wants
-		if (app instanceof JFXGLApplication) {
-			((JFXGLApplication) app).initJFXGL(this);
-		}
 	}
 	
-	public void runOnEventsThread(Runnable runnable) {
+	public static void runOnEventsThread(Runnable runnable) {
 		PlatformImpl.runLater(runnable);
 	}
 	
-	public void runOnEventsThreadAndWait(CheckedRunnable runnable) {
+	public static void runOnEventsThreadAndWait(CheckedRunnable runnable) {
 		
 		AtomicReference<Throwable> eventsException = new AtomicReference<>(null);
 		
@@ -234,17 +233,7 @@ public class JFXGL {
 		}
 	}
 	
-	/**
-	 * This context is used internally by JavaFX. You probably
-	 * don't want to use it for your application rendering unless
-	 * you don't have anything better already.
-	 */
-	public JFXGLContext getContext() {
-		// convenience method so the user app doesn't get confused about how to manage context lifecycles
-		return JFXGLContext.get();
-	}
-
-	public void render() {
+	public static void render() {
 		
 		// make sure these scenes always get repainted
 		for (Scene scene : alwaysRepaintScenes) {
@@ -258,7 +247,7 @@ public class JFXGL {
 		toolkit.render();
 	}
 	
-	public void terminate() {
+	public static void terminate() {
 		
 		try {
 			
