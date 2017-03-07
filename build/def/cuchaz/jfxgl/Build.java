@@ -3,8 +3,11 @@ package cuchaz.jfxgl;
 import java.io.File;
 
 import org.jerkar.api.depmanagement.JkDependencies;
+import org.jerkar.api.depmanagement.JkFileSystemDependency;
 import org.jerkar.api.depmanagement.JkModuleDependency;
 import org.jerkar.api.depmanagement.JkModuleId;
+import org.jerkar.api.depmanagement.JkRepos;
+import org.jerkar.api.depmanagement.JkScopedDependency;
 import org.jerkar.api.depmanagement.JkVersion;
 import org.jerkar.api.file.JkFileTreeSet;
 import org.jerkar.api.file.JkPathFilter;
@@ -45,50 +48,64 @@ public class Build extends JkJavaBuild {
 	@Override
 	public JkDependencies dependencies() {
 		
-		// tell the eclipse plugin to use the workspace default JDK
+		// tell the eclipse plugin to use the special JDK without JavaFX
+		// NOTE: you should create a JRE in the  eclipse workspace needs to have a JRE with this name!
+		String jdkName = "openjdk-8u121-noFX";
 		JkBuildPluginEclipse eclipsePlugin = pluginOf(JkBuildPluginEclipse.class);
 		if (eclipsePlugin != null) {
-			eclipsePlugin.jreContainer = "org.eclipse.jdt.launching.JRE_CONTAINER";
+			eclipsePlugin.jreContainer = "org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/" + jdkName;
 		}
-		
-		final String LWJGLVersion = "3.1.1";
 		
 		return JkDependencies.builder()
 			
 			// OpenJFX modules (already compiled)
-			.on(new File("../openjfx/modules/controls/bin"))
-			.on(new File("../openjfx/modules/fxml/bin"))
-			.on(new File("../openjfx/modules/graphics/bin"))
-			.on(new File("../openjfx/modules/base/bin"))
+			// NOTE: ideally these would be referenced projects in Eclipse (better IDE integration that way),
+			// but jerkar wants to always compile sub-projects and I don't know how to tell it no
+			// fix incoming, see github issue: https://github.com/jerkar/jerkar/issues/61
+			.on(new File("../openjfx/modules/controls/bin")).scope(PROVIDED)
+			.on(new File("../openjfx/modules/fxml/bin")).scope(PROVIDED)
+			.on(new File("../openjfx/modules/graphics/bin")).scope(PROVIDED)
+			.on(new File("../openjfx/modules/base/bin")).scope(PROVIDED)
 			
 			// 3rd-party libs
-			.on("ar.com.hjg:pngj:2.1.0")
-			.on("org.joml:joml:1.9.2")
 			.on("org.ow2.asm:asm:5.2")
-			
-			// LWJGL
-			.on(         "org.lwjgl:lwjgl:" + LWJGLVersion)
-			.on(uglyHack("org.lwjgl:lwjgl:" + LWJGLVersion + ":natives-linux"))
-			.on(         "org.lwjgl:lwjgl-glfw:" + LWJGLVersion)
-			.on(uglyHack("org.lwjgl:lwjgl-glfw:" + LWJGLVersion + ":natives-linux"))
-			.on(         "org.lwjgl:lwjgl-jemalloc:" + LWJGLVersion)
-			.on(uglyHack("org.lwjgl:lwjgl-jemalloc:" + LWJGLVersion + ":natives-linux"))
-			.on(         "org.lwjgl:lwjgl-opengl:" + LWJGLVersion)
-			.on(uglyHack("org.lwjgl:lwjgl-opengl:" + LWJGLVersion + ":natives-linux"))
-			.on(         "org.lwjgl:lwjgl-openal:" + LWJGLVersion)
-			.on(uglyHack("org.lwjgl:lwjgl-openal:" + LWJGLVersion + ":natives-linux"))
-			.on(         "org.lwjgl:lwjgl-stb:" + LWJGLVersion)
-			.on(uglyHack("org.lwjgl:lwjgl-stb:" + LWJGLVersion + ":natives-linux"))
+			.on(lwjgl("3.1.1", "glfw", "jemalloc", "opengl"))
 			
 			.build();
 	}
 	
-	private File uglyHack(String desc) {
-		JkModuleDependency modDep = JkModuleDependency.of(desc);
-		if (modDep.classifier() == null) {
-			throw new IllegalArgumentException("dependency must have classifier to resolve artifact directly");
+	public static JkDependencies lwjgl(String version, String ... modules) {
+		JkDependencies deps = lwjgl(version, (String)null);
+		for (String module : modules) {
+			deps = deps.and(lwjgl(version, module));
 		}
-		return buildRepos().get(modDep);
+		return deps;
+	}
+	
+	public static JkDependencies lwjgl(String version, String module) {
+		String name = "lwjgl";
+		if (module != null) {
+			name += "-" + module;
+		}
+		String desc = "org.lwjgl:" + name + ":" + version;
+		return JkDependencies.of(JkScopedDependency.of(JkModuleDependency.of(desc)))
+			.and(allNatives(desc));
+	}
+	
+	public static JkDependencies allNatives(String desc) {
+		return JkDependencies.of(RUNTIME,
+			natives(desc, "linux"),
+			natives(desc, "windows"),
+			natives(desc, "macos")
+		);
+	}
+	
+	public static JkFileSystemDependency natives(String desc, String os) {
+		// NOTE: better support for natives in Jerkar is in-progress
+		// this is method a hacky workaround
+		// see: https://github.com/jerkar/jerkar/issues/60
+		JkModuleDependency modDep = JkModuleDependency.of(desc + ":natives-" + os);
+		return JkFileSystemDependency.of(JkRepos.mavenCentral().get(modDep));
 	}
 	
 	@Override

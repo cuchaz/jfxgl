@@ -1,9 +1,5 @@
 package cuchaz.jfxgl.prism;
 
-import java.io.File;
-
-import cuchaz.jfxgl.TexTools;
-
 public class OffscreenBuffer {
 
 	private JFXGLContext context;
@@ -48,6 +44,10 @@ public class OffscreenBuffer {
 		quad = new TexturedQuad(0, 0, width, height, texId, quadShader);
 	}
 	
+	public int getTexId() {
+		return texId;
+	}
+	
 	public int getFboId() {
 		return fboId;
 	}
@@ -79,9 +79,5 @@ public class OffscreenBuffer {
 		context.deleteFBO(fboId);
 		quad.cleanup();
 		quadShader.cleanup();
-	}
-	
-	public void dump(File file) {
-		TexTools.dumpTexture(texId, file);
 	}
 }

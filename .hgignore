@@ -1,6 +1,7 @@
 
 syntax: glob
 .settings
+.classpath
 build/output
 bin
 

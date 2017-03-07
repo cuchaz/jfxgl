@@ -1,6 +1,5 @@
 package cuchaz.jfxgl.glass;
 
-import java.io.File;
 import java.nio.IntBuffer;
 
 import org.lwjgl.glfw.GLFW;
@@ -200,8 +199,8 @@ public class JFXGLWindow extends Window {
 		}
 	}
 	
-	public void dump(File file) {
-		buf.dump(file);
+	public OffscreenBuffer getBuffer() {
+		return buf;
 	}
 	
 	// override these to disable the event thread check,
