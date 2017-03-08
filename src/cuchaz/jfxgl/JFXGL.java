@@ -115,6 +115,10 @@ public class JFXGL {
 			
 			// start() the app
 			app.start(primaryStage);
+			
+			// the window is actually already showing, but JavaFX doesn't know that yet
+			// so make JavaFX catch up by "showing" the window
+			primaryStage.show();
 		});
 		
 		// the app started. track it so we can stop it later
