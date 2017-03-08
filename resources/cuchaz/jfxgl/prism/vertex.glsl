@@ -20,7 +20,7 @@ out vec2 passTexCoord;
 
 void main(void) {
 
-	vec2 pos = inPos;
+	vec2 pos = inPos + viewPos;
 	
 	if (yflip) {
 		pos.y = viewSize.y - pos.y;

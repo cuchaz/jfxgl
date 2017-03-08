@@ -9,8 +9,6 @@
  *************************************************************************/
 package cuchaz.jfxgl;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -33,7 +31,6 @@ import cuchaz.jfxgl.prism.JFXGLContext;
 import cuchaz.jfxgl.prism.JFXGLFactory;
 import cuchaz.jfxgl.toolkit.JFXGLToolkit;
 import javafx.application.Application;
-import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class JFXGL {
@@ -56,8 +53,6 @@ public class JFXGL {
 		public GLFWScrollCallbackI scroll = null;
 		public GLFWWindowFocusCallbackI windowFocus = null;
 	}
-	
-	public static final List<Scene> alwaysRepaintScenes = new ArrayList<>();
 	
 	private static JFXGLToolkit toolkit;
 	private static Application app;
@@ -244,18 +239,13 @@ public class JFXGL {
 	
 	public static void render() {
 		
-		// make sure these scenes always get repainted
-		for (Scene scene : alwaysRepaintScenes) {
-			toolkit.addRepaintSceneRenderJob(scene);
-		}
-		
 		// tell JavaFX stages and scenes to update and send render jobs (on the FX thread)
 		toolkit.postPulse();
 		
 		// process the render jobs from JavaFX
 		toolkit.render();
 	}
-	
+
 	public static void terminate() {
 		
 		try {

@@ -352,7 +352,7 @@ public class JFXGLContext extends GLContext {
 
 	@Override
 	public void finish() {
-		throw new UnsupportedOperationException("IMPLEMENT ME!");
+		// nothing to do
 	}
 
 	@Override
@@ -415,8 +415,12 @@ public class JFXGLContext extends GLContext {
 
 	@Override
 	public void setShaderProgram(int programId) {
-		// TODO: use program caching that works with push/pop attrib
+		// TODO: use program caching that works with push/pop attrib?
 		GL20.glUseProgram(programId);
+	}
+	
+	public int getShaderProgram() {
+		return GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
 	}
 
 	@Override

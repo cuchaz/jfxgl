@@ -21,6 +21,10 @@ public class OffscreenBuffer {
 	
 	public OffscreenBuffer(JFXGLContext context, int width, int height) {
 		
+		if (width <= 0 || height <= 0) {
+			throw new IllegalArgumentException(String.format("invalid size: %dx%d", width, height));
+		}
+		
 		this.context = context;
 		
 		quadShader = new TexturedQuad.Shader(context);
@@ -68,13 +72,13 @@ public class OffscreenBuffer {
 	}
 	
 	public void render() {
-		render(0, 0, false);
+		render(0, 0, width, height, false);
 	}
 	
-	public void render(int x, int y, boolean yflip) {
+	public void render(int x, int y, int w, int h, boolean yflip) {
 		quadShader.bind();
 		quadShader.setViewPos(x, y);
-		quadShader.setViewSize(width, height);
+		quadShader.setViewSize(w, h);
 		quadShader.setYFlip(yflip);
 		quad.render();
 	}

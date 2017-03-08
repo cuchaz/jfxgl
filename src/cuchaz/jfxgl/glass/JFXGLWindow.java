@@ -202,8 +202,12 @@ public class JFXGLWindow extends Window {
 		
 		// copy our framebuffer to the main framebuffer
 		if (context != null) {
+			
+			// JavaFX might have left some weird OpenGL state, so fix that now
 			GL11.glEnable(GL11.GL_BLEND);
 			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+			context.updateViewportAndDepthTest(0, 0, width, height, false);
+			
 			buf.render();
 		}
 	}
