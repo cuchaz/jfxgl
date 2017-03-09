@@ -3,5 +3,6 @@ syntax: glob
 .settings
 .classpath
 build/output
+build/libs
 bin
 
