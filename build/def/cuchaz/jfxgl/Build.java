@@ -71,10 +71,10 @@ public class Build extends JkJavaBuild {
 			// NOTE: ideally these would be referenced projects in Eclipse (better IDE integration that way),
 			// but jerkar wants to always compile sub-projects and I don't know how to tell it no
 			// fix incoming, see github issue: https://github.com/jerkar/jerkar/issues/61
-			.on(new File("../openjfx/modules/controls/bin")).scope(PROVIDED)
-			.on(new File("../openjfx/modules/fxml/bin")).scope(PROVIDED)
-			.on(new File("../openjfx/modules/graphics/bin")).scope(PROVIDED)
-			.on(new File("../openjfx/modules/base/bin")).scope(PROVIDED)
+			.on(new File("../openjfx/modules/controls/build/classes/main")).scope(PROVIDED)
+			.on(new File("../openjfx/modules/fxml/build/classes/main")).scope(PROVIDED)
+			.on(new File("../openjfx/modules/graphics/build/classes/main")).scope(PROVIDED)
+			.on(new File("../openjfx/modules/base/build/classes/main")).scope(PROVIDED)
 			
 			// 3rd-party libs
 			.on("org.ow2.asm:asm:5.2")

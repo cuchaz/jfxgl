@@ -1,0 +1,1005 @@
+diff --git a/modules/graphics/src/main/java/com/sun/glass/ui/PlatformFactory.java b/modules/graphics/src/main/java/com/sun/glass/ui/PlatformFactory.java
+--- a/modules/graphics/src/main/java/com/sun/glass/ui/PlatformFactory.java
++++ b/modules/graphics/src/main/java/com/sun/glass/ui/PlatformFactory.java
+@@ -32,7 +32,7 @@
+ import com.sun.glass.ui.delegate.MenuItemDelegate;
+ 
+ public abstract class PlatformFactory {
+-    private static PlatformFactory instance;
++    public static PlatformFactory instance;
+     public static synchronized PlatformFactory getPlatformFactory() {
+         if (instance == null) {
+             try {
+diff --git a/modules/graphics/src/main/java/com/sun/glass/ui/Screen.java b/modules/graphics/src/main/java/com/sun/glass/ui/Screen.java
+--- a/modules/graphics/src/main/java/com/sun/glass/ui/Screen.java
++++ b/modules/graphics/src/main/java/com/sun/glass/ui/Screen.java
+@@ -96,7 +96,7 @@
+     private final float uiScale;
+     private final float renderScale;
+ 
+-    protected Screen(
++    public Screen(
+             long nativePtr,
+ 
+             int depth,
+@@ -122,7 +122,7 @@
+              1.0f, renderScale);
+     }
+ 
+-    protected Screen(
++    public Screen(
+             long nativePtr,
+ 
+             int depth,
+diff --git a/modules/graphics/src/main/java/com/sun/javafx/sg/prism/NGRegion.java b/modules/graphics/src/main/java/com/sun/javafx/sg/prism/NGRegion.java
+--- a/modules/graphics/src/main/java/com/sun/javafx/sg/prism/NGRegion.java
++++ b/modules/graphics/src/main/java/com/sun/javafx/sg/prism/NGRegion.java
+@@ -756,7 +756,7 @@
+         }
+     }
+ 
+-    private void renderBackgroundRectangle(Graphics g) {
++    /* TEMP private */ protected void renderBackgroundRectangle(Graphics g) {
+         // TODO a big chunk of this only makes sense to do if there actually are background fills,
+         // and we should guard against that.
+ 
+diff --git a/modules/graphics/src/main/java/com/sun/javafx/tk/Toolkit.java b/modules/graphics/src/main/java/com/sun/javafx/tk/Toolkit.java
+--- a/modules/graphics/src/main/java/com/sun/javafx/tk/Toolkit.java
++++ b/modules/graphics/src/main/java/com/sun/javafx/tk/Toolkit.java
+@@ -98,8 +98,8 @@
+ 
+ public abstract class Toolkit {
+     private static String tk;
+-    private static Toolkit TOOLKIT;
+-    private static Thread fxUserThread = null;
++    protected static Toolkit TOOLKIT;
++    protected static Thread fxUserThread = null;
+ 
+     private static final String QUANTUM_TOOLKIT     = "com.sun.javafx.tk.quantum.QuantumToolkit";
+     private static final String DEFAULT_TOOLKIT     = QUANTUM_TOOLKIT;
+diff --git a/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/PaintCollector.java b/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/PaintCollector.java
+--- a/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/PaintCollector.java
++++ b/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/PaintCollector.java
+@@ -59,14 +59,14 @@
+  * Assertions have been added to each method to verify whether the calling
+  * thread is the expected thread.
+  */
+-final class PaintCollector implements CompletionListener {
++public class PaintCollector implements CompletionListener {
+     /*
+         Generally we would prefer to remove this static state and pass the
+         collector where it needs to go rather than having code reach into this
+         static method to get the instance. IoC (inversion of control) makes
+         the code more readable and testable, in general.
+     */
+-    private static volatile PaintCollector collector;
++    protected static volatile PaintCollector collector;
+ 
+     static PaintCollector createInstance(QuantumToolkit toolkit) {
+         return collector = new PaintCollector(toolkit);
+@@ -142,7 +142,7 @@
+      *
+      * @param qt The QuantumToolkit instance.
+      */
+-    private PaintCollector(QuantumToolkit qt) {
++    protected PaintCollector(QuantumToolkit qt) {
+         toolkit  = qt;
+     }
+ 
+@@ -150,7 +150,7 @@
+      * Called by renderAll to wait for rendering to complete before
+      * continuing.
+      */
+-    void waitForRenderingToComplete() {
++    protected void waitForRenderingToComplete() {
+         while (true) {
+             try {
+                 // We need to keep waiting until things are done!
+@@ -174,7 +174,7 @@
+      *
+      * @return Whether there are any dirty scenes that need to be rendered.
+      */
+-    final boolean hasDirty() {
++    protected boolean hasDirty() {
+         return hasDirty;
+     }
+ 
+@@ -334,7 +334,7 @@
+      * Called by QuantumToolkit during a pulse to render whatever dirty scenes
+      * we have. This method is only called on the FX thread.
+      */
+-    final void renderAll() {
++    protected void renderAll() {
+         // Ensure we're called only from the FX thread
+         assert Thread.currentThread() == QuantumToolkit.getFxUserThread();
+ 
+diff --git a/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/QuantumRenderer.java b/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/QuantumRenderer.java
+--- a/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/QuantumRenderer.java
++++ b/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/QuantumRenderer.java
+@@ -54,19 +54,19 @@
+ /*
+  * Quantum Renderer
+  */
+-final class QuantumRenderer extends ThreadPoolExecutor  {
++public class QuantumRenderer extends ThreadPoolExecutor  {
+     private static boolean usePurgatory = // TODO - deprecate
+         AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> Boolean.getBoolean("decora.purgatory"));
+ 
+ 
+-    private static final AtomicReference<QuantumRenderer> instanceReference =
++    protected static final AtomicReference<QuantumRenderer> instanceReference =
+                                     new AtomicReference<>(null);
+ 
+     private Thread          _renderer;
+     private Throwable       _initThrowable = null;
+     private CountDownLatch  initLatch = new CountDownLatch(1);
+ 
+-    private QuantumRenderer() {
++    protected QuantumRenderer() {
+         super(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+         setThreadFactory(new QuantumThreadFactory());
+     }
+@@ -235,7 +235,7 @@
+         }
+     }
+ 
+-    void checkRendererIdle() {
++    protected void checkRendererIdle() {
+         if (PrismSettings.threadCheck) {
+             PaintCollector collector = PaintCollector.getInstance();
+             final boolean busy = ViewPainter.renderLock.isLocked() &&
+diff --git a/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/QuantumToolkit.java b/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/QuantumToolkit.java
+--- a/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/QuantumToolkit.java
++++ b/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/QuantumToolkit.java
+@@ -132,7 +132,7 @@
+ import static com.sun.javafx.logging.PulseLogger.PULSE_LOGGING_ENABLED;
+ import com.sun.prism.impl.ManagedResource;
+ 
+-public final class QuantumToolkit extends Toolkit {
++public class QuantumToolkit extends Toolkit {
+ 
+     public static final boolean verbose =
+             AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> Boolean.getBoolean("quantum.verbose"));
+@@ -279,7 +279,7 @@
+         // not implemented
+     }
+ 
+-    boolean shouldWaitForRenderingToComplete() {
++    protected boolean shouldWaitForRenderingToComplete() {
+         return !multithreaded;
+     }
+ 
+@@ -414,7 +414,7 @@
+         return nativeSystemVsync;
+     }
+ 
+-    boolean isVsyncEnabled() {
++    protected boolean isVsyncEnabled() {
+         return (PrismSettings.isVsyncEnabled &&
+                 pipeline.isVsyncSupported());
+     }
+@@ -452,7 +452,7 @@
+         return (renderer.submitRenderJob(r));
+     }
+ 
+-    void postPulse() {
++    protected void postPulse() {
+         if (toolkitRunning.get() &&
+             (animationRunning.get() || nextPulseRequested.get() || collector.hasDirty()) &&
+             !setPulseRunning()) {
+diff --git a/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/ViewScene.java b/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/ViewScene.java
+--- a/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/ViewScene.java
++++ b/modules/graphics/src/main/java/com/sun/javafx/tk/quantum/ViewScene.java
+@@ -37,7 +37,7 @@
+ import com.sun.prism.GraphicsPipeline;
+ import javafx.scene.Parent;
+ 
+-class ViewScene extends GlassScene {
++public class ViewScene extends GlassScene {
+ 
+     private static final String UNSUPPORTED_FORMAT =
+         "Transparent windows only supported for BYTE_BGRA_PRE format on LITTLE_ENDIAN machines";
+@@ -130,7 +130,7 @@
+         });
+     }
+ 
+-    @Override void repaint() {
++    @Override public void repaint() {
+         if (platformView == null) {
+             return;
+         }
+diff --git a/modules/graphics/src/main/java/com/sun/prism/es2/GLContext.java b/modules/graphics/src/main/java/com/sun/prism/es2/GLContext.java
+--- a/modules/graphics/src/main/java/com/sun/prism/es2/GLContext.java
++++ b/modules/graphics/src/main/java/com/sun/prism/es2/GLContext.java
+@@ -35,85 +35,85 @@
+ import com.sun.prism.impl.PrismSettings;
+ import com.sun.prism.paint.Color;
+ 
+-abstract class GLContext {
++public abstract class GLContext {
+ 
+     // Use by glBlendFunc
+-    final static int GL_ZERO                      = 0;
+-    final static int GL_ONE                       = 1;
+-    final static int GL_SRC_COLOR                 = 2;
+-    final static int GL_ONE_MINUS_SRC_COLOR       = 3;
+-    final static int GL_DST_COLOR                 = 4;
+-    final static int GL_ONE_MINUS_DST_COLOR       = 5;
+-    final static int GL_SRC_ALPHA                 = 6;
+-    final static int GL_ONE_MINUS_SRC_ALPHA       = 7;
+-    final static int GL_DST_ALPHA                 = 8;
+-    final static int GL_ONE_MINUS_DST_ALPHA       = 9;
+-    final static int GL_CONSTANT_COLOR            = 10;
+-    final static int GL_ONE_MINUS_CONSTANT_COLOR  = 11;
+-    final static int GL_CONSTANT_ALPHA            = 12;
+-    final static int GL_ONE_MINUS_CONSTANT_ALPHA  = 13;
+-    final static int GL_SRC_ALPHA_SATURATE        = 14;
++    protected final static int GL_ZERO                      = 0;
++    protected final static int GL_ONE                       = 1;
++    protected final static int GL_SRC_COLOR                 = 2;
++    protected final static int GL_ONE_MINUS_SRC_COLOR       = 3;
++    protected final static int GL_DST_COLOR                 = 4;
++    protected final static int GL_ONE_MINUS_DST_COLOR       = 5;
++    protected final static int GL_SRC_ALPHA                 = 6;
++    protected final static int GL_ONE_MINUS_SRC_ALPHA       = 7;
++    protected final static int GL_DST_ALPHA                 = 8;
++    protected final static int GL_ONE_MINUS_DST_ALPHA       = 9;
++    protected final static int GL_CONSTANT_COLOR            = 10;
++    protected final static int GL_ONE_MINUS_CONSTANT_COLOR  = 11;
++    protected final static int GL_CONSTANT_ALPHA            = 12;
++    protected final static int GL_ONE_MINUS_CONSTANT_ALPHA  = 13;
++    protected final static int GL_SRC_ALPHA_SATURATE        = 14;
+ 
+     // Texture Type
+-    final static int GL_FLOAT                     = 20;
+-    final static int GL_UNSIGNED_BYTE             = 21;
+-    final static int GL_UNSIGNED_INT_8_8_8_8_REV  = 22;
+-    final static int GL_UNSIGNED_INT_8_8_8_8      = 23;
+-    final static int GL_UNSIGNED_SHORT_8_8_APPLE  = 24;
++    protected final static int GL_FLOAT                     = 20;
++    protected final static int GL_UNSIGNED_BYTE             = 21;
++    protected final static int GL_UNSIGNED_INT_8_8_8_8_REV  = 22;
++    protected final static int GL_UNSIGNED_INT_8_8_8_8      = 23;
++    protected final static int GL_UNSIGNED_SHORT_8_8_APPLE  = 24;
+ 
+     // Use by Texture: Pixel Format
+-    final static int GL_RGBA                      = 40;
+-    final static int GL_BGRA                      = 41;
+-    final static int GL_RGB                       = 42;
+-    final static int GL_LUMINANCE                 = 43;
+-    final static int GL_ALPHA                     = 44;
+-    final static int GL_RGBA32F                   = 45;
+-    final static int GL_YCBCR_422_APPLE           = 46;
++    protected final static int GL_RGBA                      = 40;
++    protected final static int GL_BGRA                      = 41;
++    protected final static int GL_RGB                       = 42;
++    protected final static int GL_LUMINANCE                 = 43;
++    protected final static int GL_ALPHA                     = 44;
++    protected final static int GL_RGBA32F                   = 45;
++    protected final static int GL_YCBCR_422_APPLE           = 46;
+ 
+     // Use by Texture
+-    final static int GL_TEXTURE_2D                = 50;
+-    final static int GL_TEXTURE_BINDING_2D        = 51;
+-    final static int GL_NEAREST                   = 52;
+-    final static int GL_LINEAR                    = 53;
+-    final static int GL_NEAREST_MIPMAP_NEAREST    = 54;
+-    final static int GL_LINEAR_MIPMAP_LINEAR      = 55;
++    protected final static int GL_TEXTURE_2D                = 50;
++    protected final static int GL_TEXTURE_BINDING_2D        = 51;
++    protected final static int GL_NEAREST                   = 52;
++    protected final static int GL_LINEAR                    = 53;
++    protected final static int GL_NEAREST_MIPMAP_NEAREST    = 54;
++    protected final static int GL_LINEAR_MIPMAP_LINEAR      = 55;
+ 
+ 
+     // Use by glPixelStorei
+-    final static int GL_UNPACK_ALIGNMENT          = 60;
+-    final static int GL_UNPACK_ROW_LENGTH         = 61;
+-    final static int GL_UNPACK_SKIP_PIXELS        = 62;
+-    final static int GL_UNPACK_SKIP_ROWS          = 63;
++    protected final static int GL_UNPACK_ALIGNMENT          = 60;
++    protected final static int GL_UNPACK_ROW_LENGTH         = 61;
++    protected final static int GL_UNPACK_SKIP_PIXELS        = 62;
++    protected final static int GL_UNPACK_SKIP_ROWS          = 63;
+ 
+     // Use by WrapState
+-    final static int WRAPMODE_REPEAT              = 100;
+-    final static int WRAPMODE_CLAMP_TO_EDGE       = 101;
+-    final static int WRAPMODE_CLAMP_TO_BORDER     = 102;
++    protected final static int WRAPMODE_REPEAT              = 100;
++    protected final static int WRAPMODE_CLAMP_TO_EDGE       = 101;
++    protected final static int WRAPMODE_CLAMP_TO_BORDER     = 102;
+ 
+     // Use by face culling for 3D implementation
+-    final static int GL_BACK                      = 110;
+-    final static int GL_FRONT                     = 111;
+-    final static int GL_NONE                      = 112;
++    protected final static int GL_BACK                      = 110;
++    protected final static int GL_FRONT                     = 111;
++    protected final static int GL_NONE                      = 112;
+ 
+     // Use for querying hardware/implementation limits
+-    final static int GL_MAX_FRAGMENT_UNIFORM_COMPONENTS  = 120;
+-    final static int GL_MAX_FRAGMENT_UNIFORM_VECTORS     = 121;
+-    final static int GL_MAX_TEXTURE_IMAGE_UNITS          = 122;
+-    final static int GL_MAX_TEXTURE_SIZE                 = 123;
+-    final static int GL_MAX_VERTEX_ATTRIBS               = 124;
+-    final static int GL_MAX_VARYING_COMPONENTS           = 125;
+-    final static int GL_MAX_VARYING_VECTORS              = 126;
+-    final static int GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS   = 127;
+-    final static int GL_MAX_VERTEX_UNIFORM_COMPONENTS    = 128;
+-    final static int GL_MAX_VERTEX_UNIFORM_VECTORS       = 129;
++    protected final static int GL_MAX_FRAGMENT_UNIFORM_COMPONENTS  = 120;
++    protected final static int GL_MAX_FRAGMENT_UNIFORM_VECTORS     = 121;
++    protected final static int GL_MAX_TEXTURE_IMAGE_UNITS          = 122;
++    protected final static int GL_MAX_TEXTURE_SIZE                 = 123;
++    protected final static int GL_MAX_VERTEX_ATTRIBS               = 124;
++    protected final static int GL_MAX_VARYING_COMPONENTS           = 125;
++    protected final static int GL_MAX_VARYING_VECTORS              = 126;
++    protected final static int GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS   = 127;
++    protected final static int GL_MAX_VERTEX_UNIFORM_COMPONENTS    = 128;
++    protected final static int GL_MAX_VERTEX_UNIFORM_VECTORS       = 129;
+ 
+-    final static int MAPTYPE_DIFFUSE = MapType.DIFFUSE.ordinal();
+-    final static int MAPTYPE_SPECULAR = MapType.SPECULAR.ordinal();
+-    final static int MAPTYPE_BUMP = MapType.BUMP.ordinal();
+-    final static int MAPTYPE_SELFILLUM = MapType.SELF_ILLUM.ordinal();
++    protected final static int MAPTYPE_DIFFUSE = MapType.DIFFUSE.ordinal();
++    protected final static int MAPTYPE_SPECULAR = MapType.SPECULAR.ordinal();
++    protected final static int MAPTYPE_BUMP = MapType.BUMP.ordinal();
++    protected final static int MAPTYPE_SELFILLUM = MapType.SELF_ILLUM.ordinal();
+ 
+     // Use by Uniform Matrix
+-    final static int NUM_MATRIX_ELEMENTS          = 16;
++    protected final static int NUM_MATRIX_ELEMENTS          = 16;
+ 
+     long nativeCtxInfo;
+     private int maxTextureSize = -1;
+@@ -258,11 +258,11 @@
+             int srcX0, int srcY0, int srcX1, int srcY1,
+             int dstX0, int dstY0, int dstX1, int dstY1);
+ 
+-    void activeTexture(int texUnit) {
++    protected void activeTexture(int texUnit) {
+         nActiveTexture(nativeCtxInfo, texUnit);
+     }
+ 
+-    void bindFBO(int nativeFBOID) {
++    protected void bindFBO(int nativeFBOID) {
+         switch (this.nativeFBOID) {
+             case FBO_ID_UNSET:
+                 this.nativeFBOID = nativeFBOID;
+@@ -280,11 +280,11 @@
+         }
+     }
+ 
+-    void bindTexture(int texID) {
++    protected void bindTexture(int texID) {
+         nBindTexture(nativeCtxInfo, texID);
+     }
+ 
+-    void blendFunc(int sFactor, int dFactor) {
++    protected void blendFunc(int sFactor, int dFactor) {
+         nBlendFunc(sFactor, dFactor);
+     }
+ 
+@@ -313,7 +313,7 @@
+         return clampToZeroAvailable.booleanValue();
+     }
+ 
+-    void clearBuffers(Color color, boolean clearColor,
++    protected void clearBuffers(Color color, boolean clearColor,
+             boolean clearDepth, boolean ignoreScissor) {
+         float r = color.getRedPremult();
+         float g = color.getGreenPremult();
+@@ -327,15 +327,15 @@
+      * Compiles the given shader program.  If successful, this function returns
+      * a handle to the newly created shader object; otherwise returns 0.
+      */
+-    int compileShader(String shaderSource, boolean vertex) {
++    protected int compileShader(String shaderSource, boolean vertex) {
+         return nCompileShader(nativeCtxInfo, shaderSource, vertex);
+     }
+ 
+-    int createDepthBuffer(int width, int height, int msaaSamples) {
++    protected int createDepthBuffer(int width, int height, int msaaSamples) {
+         return nCreateDepthBuffer(nativeCtxInfo, width, height, msaaSamples);
+     }
+ 
+-    int createRenderBuffer(int width, int height, int msaaSamples) {
++    protected int createRenderBuffer(int width, int height, int msaaSamples) {
+         return nCreateRenderBuffer(nativeCtxInfo, width, height, msaaSamples);
+     }
+ 
+@@ -345,7 +345,7 @@
+      * @param texID if defined, will attach texture to generated FBO
+      * @return FBO id
+      */
+-    int createFBO(int texID) {
++    protected int createFBO(int texID) {
+         if (nativeFBOID != FBO_ID_NOCACHE) {
+             nativeFBOID = FBO_ID_UNSET; // invalidate FBO ID cache
+         }
+@@ -357,7 +357,7 @@
+      * successful, this function returns a handle to the newly created shader
+      * program; otherwise returns 0.
+      */
+-    int createProgram(int vertexShaderID, int[] fragmentShaderIDArr,
++    protected int createProgram(int vertexShaderID, int[] fragmentShaderIDArr,
+             String[] attrs, int[] indexs) {
+ 
+         if (fragmentShaderIDArr == null) {
+@@ -384,23 +384,23 @@
+                 attrs.length, attrs, indexs);
+     }
+ 
+-    int createTexture(int width, int height) {
++    protected int createTexture(int width, int height) {
+         return nCreateTexture(nativeCtxInfo, width, height);
+     }
+ 
+-    void deleteRenderBuffer(int dbID) {
++    protected void deleteRenderBuffer(int dbID) {
+         nDeleteRenderBuffer(nativeCtxInfo, dbID);
+     }
+ 
+-    void deleteFBO(int fboID) {
++    protected void deleteFBO(int fboID) {
+         nDeleteFBO(nativeCtxInfo, fboID);
+     }
+ 
+-    void deleteShader(int shadeID) {
++    protected void deleteShader(int shadeID) {
+         nDeleteShader(nativeCtxInfo, shadeID);
+     }
+ 
+-    void blitFBO(int msaaFboID, int dstFboID,
++    protected void blitFBO(int msaaFboID, int dstFboID,
+                  int srcX0, int srcY0, int srcX1, int srcY1,
+                  int dstX0, int dstY0, int dstX1, int dstY1)
+     {
+@@ -409,25 +409,25 @@
+               dstX0, dstY0, dstX1, dstY1);
+     }
+ 
+-    void deleteTexture(int tID) {
++    protected void deleteTexture(int tID) {
+         nDeleteTexture(nativeCtxInfo, tID);
+     }
+ 
+-    void disposeShaders(int pID, int vID, int[] fID) {
++    protected void disposeShaders(int pID, int vID, int[] fID) {
+         nDisposeShaders(nativeCtxInfo, pID, vID, fID);
+     }
+ 
+-    void finish() {
++    protected void finish() {
+         nFinish();
+     }
+ 
+-    int genAndBindTexture() {
++    protected int genAndBindTexture() {
+         int texID = nGenAndBindTexture();
+         boundTextures[activeTexUnit] = texID;
+         return texID;
+     }
+ 
+-    int getBoundFBO() {
++    protected int getBoundFBO() {
+         switch (nativeFBOID) {
+             case FBO_ID_UNSET:
+                 nativeFBOID = nGetFBO();
+@@ -439,11 +439,11 @@
+         }
+     }
+ 
+-    long getNativeCtxInfo() {
++    protected long getNativeCtxInfo() {
+         return nativeCtxInfo;
+     }
+ 
+-    abstract long getNativeHandle();
++    protected abstract long getNativeHandle();
+ 
+     /***************************************************/
+     int getActiveTextureUnit() {
+@@ -477,7 +477,7 @@
+     }
+ 
+     // Forcibly sets the currently bound texture to the given object.
+-    void setBoundTexture(int texid) {
++    protected void setBoundTexture(int texid) {
+         bindTexture(texid);
+         boundTextures[activeTexUnit] = texid;
+     }
+@@ -491,7 +491,7 @@
+     }
+     /***********************************************************/
+ 
+-    int getIntParam(int param) {
++    protected int getIntParam(int param) {
+         return nGetIntParam(param);
+     }
+ 
+@@ -500,7 +500,7 @@
+         return maxSamples < 2 ? 0 : (maxSamples < 4 ? 2 : 4);
+     }
+ 
+-    int getMaxSampleSize() {
++    protected int getMaxSampleSize() {
+         if (maxSampleSize > -1) {
+             return maxSampleSize;
+         }
+@@ -515,23 +515,23 @@
+         return maxTextureSize = getIntParam(GLContext.GL_MAX_TEXTURE_SIZE);
+     }
+ 
+-    int getUniformLocation(int programID, String name) {
++    protected int getUniformLocation(int programID, String name) {
+         return nGetUniformLocation(nativeCtxInfo, programID, name);
+     }
+ 
+-    boolean isShaderCompilerSupported() {
++    protected boolean isShaderCompilerSupported() {
+         // GL2
+         return true;
+         // else TODO: glGetBooleanv(GL_SHADER_COMPILER, supported, 0); (RT-27526)
+     }
+ 
+-    abstract void makeCurrent(GLDrawable drawable);
++    protected abstract void makeCurrent(GLDrawable drawable);
+ 
+-    void pixelStorei(int pname, int param) {
++    protected void pixelStorei(int pname, int param) {
+         nPixelStorei(pname, param);
+     }
+ 
+-    boolean readPixels(Buffer buffer, int x, int y, int w, int h) {
++    protected boolean readPixels(Buffer buffer, int x, int y, int w, int h) {
+         boolean res = false;
+         if (buffer instanceof ByteBuffer) {
+             ByteBuffer buf = (ByteBuffer) buffer;
+@@ -554,15 +554,15 @@
+         return res;
+     }
+ 
+-    void scissorTest(boolean enable, int x, int y, int w, int h) {
++    protected void scissorTest(boolean enable, int x, int y, int w, int h) {
+         nScissorTest(nativeCtxInfo, enable, x, y, w, h);
+     }
+ 
+-    void setShaderProgram(int progid) {
++    protected void setShaderProgram(int progid) {
+         nUseProgram(nativeCtxInfo, progid);
+     }
+ 
+-    void texParamsMinMax(int pname, boolean useMipmap) {
++    protected void texParamsMinMax(int pname, boolean useMipmap) {
+         int min = pname;
+         int max = pname;
+         if (useMipmap) {
+@@ -572,7 +572,7 @@
+         nTexParamsMinMax(min, max);
+     }
+ 
+-    boolean texImage2D(int target, int level, int internalFormat,
++    protected boolean texImage2D(int target, int level, int internalFormat,
+             int width, int height, int border, int format, int type,
+             java.nio.Buffer pixels, boolean useMipmap) {
+         boolean result;
+@@ -589,7 +589,7 @@
+ 
+     }
+ 
+-    void texSubImage2D(int target, int level, int xoffset, int yoffset,
++    protected void texSubImage2D(int target, int level, int xoffset, int yoffset,
+             int width, int height, int format, int type, java.nio.Buffer pixels) {
+         boolean direct = BufferFactory.isDirect(pixels);
+         if (direct) {
+@@ -603,7 +603,7 @@
+         }
+     }
+ 
+-    void updateViewportAndDepthTest(int x, int y, int w, int h,
++    protected void updateViewportAndDepthTest(int x, int y, int w, int h,
+             boolean depthTest) {
+         if (viewportX != x || viewportY != y || viewportWidth != w || viewportHeight != h) {
+             viewportX = x;
+@@ -618,18 +618,18 @@
+         }
+     }
+ 
+-    void updateMSAAState(boolean msaa) {
++    protected void updateMSAAState(boolean msaa) {
+         if (this.msaa != msaa) {
+             nSetMSAA(nativeCtxInfo, msaa);
+             this.msaa = msaa;
+         }
+     }
+ 
+-    void updateFilterState(int texID, boolean linearFilter) {
++    protected void updateFilterState(int texID, boolean linearFilter) {
+         nUpdateFilterState(nativeCtxInfo, texID, linearFilter);
+     }
+ 
+-    void updateWrapState(int texID, WrapMode wrapMode) {
++    protected void updateWrapState(int texID, WrapMode wrapMode) {
+         int wm;
+         switch (wrapMode) {
+             case REPEAT_SIMULATED:  // mode should not matter for this case
+@@ -652,23 +652,23 @@
+         nUpdateWrapState(nativeCtxInfo, texID, wm);
+     }
+ 
+-    void uniform1f(int location, float v0) {
++    protected void uniform1f(int location, float v0) {
+         nUniform1f(nativeCtxInfo, location, v0);
+     }
+ 
+-    void uniform2f(int location, float v0, float v1) {
++    protected void uniform2f(int location, float v0, float v1) {
+         nUniform2f(nativeCtxInfo, location, v0, v1);
+     }
+ 
+-    void uniform3f(int location, float v0, float v1, float v2) {
++    protected void uniform3f(int location, float v0, float v1, float v2) {
+         nUniform3f(nativeCtxInfo, location, v0, v1, v2);
+     }
+ 
+-    void uniform4f(int location, float v0, float v1, float v2, float v3) {
++    protected void uniform4f(int location, float v0, float v1, float v2, float v3) {
+         nUniform4f(nativeCtxInfo, location, v0, v1, v2, v3);
+     }
+ 
+-    void uniform4fv(int location, int count, java.nio.FloatBuffer value) {
++    protected void uniform4fv(int location, int count, java.nio.FloatBuffer value) {
+         boolean direct = BufferFactory.isDirect(value);
+         if (direct) {
+             nUniform4fv0(nativeCtxInfo, location, count, value,
+@@ -679,23 +679,23 @@
+         }
+     }
+ 
+-    void uniform1i(int location, int v0) {
++    protected void uniform1i(int location, int v0) {
+         nUniform1i(nativeCtxInfo, location, v0);
+     }
+ 
+-    void uniform2i(int location, int v0, int v1) {
++    protected void uniform2i(int location, int v0, int v1) {
+         nUniform2i(nativeCtxInfo, location, v0, v1);
+     }
+ 
+-    void uniform3i(int location, int v0, int v1, int v2) {
++    protected void uniform3i(int location, int v0, int v1, int v2) {
+         nUniform3i(nativeCtxInfo, location, v0, v1, v2);
+     }
+ 
+-    void uniform4i(int location, int v0, int v1, int v2, int v3) {
++    protected void uniform4i(int location, int v0, int v1, int v2, int v3) {
+         nUniform4i(nativeCtxInfo, location, v0, v1, v2, v3);
+     }
+ 
+-    void uniform4iv(int location, int count, java.nio.IntBuffer value) {
++    protected void uniform4iv(int location, int count, java.nio.IntBuffer value) {
+         boolean direct = BufferFactory.isDirect(value);
+         if (direct) {
+             nUniform4iv0(nativeCtxInfo, location, count, value,
+@@ -706,83 +706,83 @@
+         }
+     }
+ 
+-    void uniformMatrix4fv(int location, boolean transpose, float values[]) {
++    protected void uniformMatrix4fv(int location, boolean transpose, float values[]) {
+         nUniformMatrix4fv(nativeCtxInfo, location, transpose, values);
+     }
+ 
+-    void enableVertexAttributes() {
++    protected void enableVertexAttributes() {
+         nEnableVertexAttributes(nativeCtxInfo);
+     }
+ 
+-    void disableVertexAttributes() {
++    protected void disableVertexAttributes() {
+         nDisableVertexAttributes(nativeCtxInfo);
+     }
+ 
+-    void drawIndexedQuads(float coords[], byte colors[], int numVertices) {
++    protected void drawIndexedQuads(float coords[], byte colors[], int numVertices) {
+         nDrawIndexedQuads(nativeCtxInfo, numVertices, coords, colors);
+     }
+ 
+-    int createIndexBuffer16(short data[]) {
++    protected int createIndexBuffer16(short data[]) {
+         return nCreateIndexBuffer16(nativeCtxInfo, data, data.length);
+     }
+ 
+-    void setIndexBuffer(int ib) {
++    protected void setIndexBuffer(int ib) {
+         nSetIndexBuffer(nativeCtxInfo, ib);
+     }
+ 
+-    void setDeviceParametersFor2D() {
++    protected void setDeviceParametersFor2D() {
+         nSetDeviceParametersFor2D(nativeCtxInfo);
+     }
+ 
+-    void setDeviceParametersFor3D() {
++    protected void setDeviceParametersFor3D() {
+         nSetDeviceParametersFor3D(nativeCtxInfo);
+     }
+ 
+-    long createES2Mesh() {
++    protected long createES2Mesh() {
+         return nCreateES2Mesh(nativeCtxInfo);
+     }
+ 
+-    void releaseES2Mesh(long nativeHandle) {
++    protected void releaseES2Mesh(long nativeHandle) {
+         nReleaseES2Mesh(nativeCtxInfo, nativeHandle);
+     }
+ 
+-    boolean buildNativeGeometry(long nativeHandle, float[] vertexBuffer,
++    protected boolean buildNativeGeometry(long nativeHandle, float[] vertexBuffer,
+             int vertexBufferLength, short[] indexBuffer, int indexBufferLength) {
+         return nBuildNativeGeometryShort(nativeCtxInfo, nativeHandle,
+                 vertexBuffer, vertexBufferLength, indexBuffer, indexBufferLength);
+     }
+ 
+-    boolean buildNativeGeometry(long nativeHandle, float[] vertexBuffer,
++    protected boolean buildNativeGeometry(long nativeHandle, float[] vertexBuffer,
+             int vertexBufferLength, int[] indexBuffer, int indexBufferLength) {
+         return nBuildNativeGeometryInt(nativeCtxInfo, nativeHandle, vertexBuffer,
+                 vertexBufferLength, indexBuffer, indexBufferLength);
+     }
+ 
+-    long createES2PhongMaterial() {
++    protected long createES2PhongMaterial() {
+         return nCreateES2PhongMaterial(nativeCtxInfo);
+     }
+ 
+-    void releaseES2PhongMaterial(long nativeHandle) {
++    protected void releaseES2PhongMaterial(long nativeHandle) {
+         nReleaseES2PhongMaterial(nativeCtxInfo, nativeHandle);
+     }
+ 
+-    void setSolidColor(long nativePhongMaterial, float r, float g, float b, float a) {
++    protected void setSolidColor(long nativePhongMaterial, float r, float g, float b, float a) {
+         nSetSolidColor(nativeCtxInfo, nativePhongMaterial, r, g, b, a);
+     }
+ 
+-    void setMap(long nativePhongMaterial, int mapType, int texID) {
++    protected void setMap(long nativePhongMaterial, int mapType, int texID) {
+         nSetMap(nativeCtxInfo, nativePhongMaterial, mapType, texID);
+     }
+ 
+-    long createES2MeshView(long nativeMeshInfo) {
++    protected long createES2MeshView(long nativeMeshInfo) {
+         return nCreateES2MeshView(nativeCtxInfo, nativeMeshInfo);
+     }
+ 
+-    void releaseES2MeshView(long nativeHandle) {
++    protected void releaseES2MeshView(long nativeHandle) {
+         nReleaseES2MeshView(nativeCtxInfo, nativeHandle);
+     }
+ 
+-    void setCullingMode(long nativeMeshViewInfo, int cullMode) {
++    protected void setCullingMode(long nativeMeshViewInfo, int cullMode) {
+         int cm;
+         if (cullMode == MeshView.CULL_NONE) {
+             cm = GL_NONE;
+@@ -796,23 +796,23 @@
+        nSetCullingMode(nativeCtxInfo, nativeMeshViewInfo, cm);
+     }
+ 
+-    void setMaterial(long nativeMeshViewInfo, long nativePhongMaterialInfo) {
++    protected void setMaterial(long nativeMeshViewInfo, long nativePhongMaterialInfo) {
+         nSetMaterial(nativeCtxInfo, nativeMeshViewInfo, nativePhongMaterialInfo);
+     }
+ 
+-    void setWireframe(long nativeMeshViewInfo, boolean wireframe) {
++    protected void setWireframe(long nativeMeshViewInfo, boolean wireframe) {
+         nSetWireframe(nativeCtxInfo, nativeMeshViewInfo, wireframe);
+     }
+ 
+-    void setAmbientLight(long nativeMeshViewInfo, float r, float g, float b) {
++    protected void setAmbientLight(long nativeMeshViewInfo, float r, float g, float b) {
+         nSetAmbientLight(nativeCtxInfo, nativeMeshViewInfo, r, g, b);
+     }
+ 
+-    void setPointLight(long nativeMeshViewInfo, int index, float x, float y, float z, float r, float g, float b, float w) {
++    protected void setPointLight(long nativeMeshViewInfo, int index, float x, float y, float z, float r, float g, float b, float w) {
+         nSetPointLight(nativeCtxInfo, nativeMeshViewInfo, index, x, y, z, r, g, b, w);
+     }
+ 
+-    void renderMeshView(long nativeMeshViewInfo) {
++    protected void renderMeshView(long nativeMeshViewInfo) {
+         nRenderMeshView(nativeCtxInfo, nativeMeshViewInfo);
+     }
+ }
+diff --git a/modules/graphics/src/main/java/com/sun/prism/es2/GLDrawable.java b/modules/graphics/src/main/java/com/sun/prism/es2/GLDrawable.java
+--- a/modules/graphics/src/main/java/com/sun/prism/es2/GLDrawable.java
++++ b/modules/graphics/src/main/java/com/sun/prism/es2/GLDrawable.java
+@@ -25,13 +25,13 @@
+ 
+ package com.sun.prism.es2;
+ 
+-abstract class GLDrawable {
++public abstract class GLDrawable {
+ 
+     final private long nativeWindow;
+     final private GLPixelFormat pixelFormat;
+     long nativeDrawableInfo;
+ 
+-    GLDrawable(long nativeWindow, GLPixelFormat pixelFormat) {
++    protected GLDrawable(long nativeWindow, GLPixelFormat pixelFormat) {
+         this.nativeWindow = nativeWindow;
+         this.pixelFormat = pixelFormat;
+     }
+@@ -44,12 +44,12 @@
+         return nativeWindow;
+     }
+ 
+-    void setNativeDrawableInfo(long nativeDrawableInfo) {
++    protected void setNativeDrawableInfo(long nativeDrawableInfo) {
+         this.nativeDrawableInfo = nativeDrawableInfo;
+     }
+ 
+     long getNativeDrawableInfo() {
+         return nativeDrawableInfo;
+     }
+-    abstract boolean swapBuffers(GLContext glCtx);
++    protected abstract boolean swapBuffers(GLContext glCtx);
+ }
+diff --git a/modules/graphics/src/main/java/com/sun/prism/es2/GLFactory.java b/modules/graphics/src/main/java/com/sun/prism/es2/GLFactory.java
+--- a/modules/graphics/src/main/java/com/sun/prism/es2/GLFactory.java
++++ b/modules/graphics/src/main/java/com/sun/prism/es2/GLFactory.java
+@@ -31,7 +31,7 @@
+ import java.security.PrivilegedAction;
+ import java.util.HashMap;
+ 
+-abstract class GLFactory {
++public abstract class GLFactory {
+ 
+     private static native boolean
+             nIsGLExtensionSupported(long nativeContextObject, String glExtStr);
+@@ -39,21 +39,21 @@
+     private static native String nGetGLRenderer(long nativeCtxInfo);
+     private static native String nGetGLVersion(long nativeCtxInfo);
+ 
+-    private static final GLFactory platformFactory;
++    public static GLFactory platformFactory;
+ 
+     /* Note: We are only storing the string information of a driver in this
+      * object. We are assuming a system with a single or homogeneous GPUs.
+      * For the case of heterogeneous GPUs system the string information
+      * will need to move to GLContext class. */
+-    long nativeCtxInfo;
+-    boolean gl2 = false;
++    protected long nativeCtxInfo;
++    protected boolean gl2 = false;
+     private GLContext shareCtx = null;
+ 
+     /**
+      * Creates a new GLFactory instance. End users do not need
+      * to call this method.
+      */
+-    GLFactory() {
++    protected GLFactory() {
+     }
+ 
+     /**
+@@ -129,10 +129,10 @@
+ 
+     // Consists of a list of prequalifying GPUs that we may use for the es2 pipe.
+     // A null preQualificationFilter implies we may consider any GPU
+-    abstract GLGPUInfo[] getPreQualificationFilter();
++    protected abstract GLGPUInfo[] getPreQualificationFilter();
+ 
+     // Consists of a list of GPUs that we will block from using the es2 pipe.
+-    abstract GLGPUInfo[] getBlackList();
++    protected abstract GLGPUInfo[] getBlackList();
+ 
+     private static GLGPUInfo readGPUInfo(long nativeCtxInfo) {
+         String glVendor = nGetGLVendor(nativeCtxInfo);
+@@ -165,7 +165,7 @@
+         return matches(gpuInfo, getBlackList());
+     }
+ 
+-    boolean isQualified(long nativeCtxInfo) {
++    protected boolean isQualified(long nativeCtxInfo) {
+         // Read the GPU (graphics hardware) information and qualifying it by
+         // checking against the preQualificationFilter and the "blocking"
+         // blackLis.
+@@ -182,22 +182,22 @@
+         return inPreQualificationFilter(gpuInfo) && !inBlackList(gpuInfo);
+     }
+ 
+-    abstract GLContext createGLContext(long nativeCtxInfo);
++    protected abstract GLContext createGLContext(long nativeCtxInfo);
+ 
+-    abstract GLContext createGLContext(GLDrawable drawable,
++    protected abstract GLContext createGLContext(GLDrawable drawable,
+             GLPixelFormat pixelFormat, GLContext shareCtx, boolean vSyncRequest);
+ 
+-    abstract GLDrawable createGLDrawable(long nativeWindow, GLPixelFormat pixelFormat);
++    protected abstract GLDrawable createGLDrawable(long nativeWindow, GLPixelFormat pixelFormat);
+ 
+-    abstract GLDrawable createDummyGLDrawable(GLPixelFormat pixelFormat);
++    protected abstract GLDrawable createDummyGLDrawable(GLPixelFormat pixelFormat);
+ 
+-    abstract GLPixelFormat createGLPixelFormat(long nativeScreen, GLPixelFormat.Attributes attrs);
++    protected abstract GLPixelFormat createGLPixelFormat(long nativeScreen, GLPixelFormat.Attributes attrs);
+ 
+     boolean isGLGPUQualify() {
+         return isQualified(nativeCtxInfo);
+     }
+ 
+-    abstract boolean initialize(Class psClass, GLPixelFormat.Attributes attrs);
++    protected abstract boolean initialize(Class psClass, GLPixelFormat.Attributes attrs);
+ 
+     GLContext getShareContext() {
+         if (shareCtx == null) {
+@@ -211,22 +211,22 @@
+         return gl2;
+     }
+ 
+-    boolean isGLExtensionSupported(String sglExtStr) {
++    protected boolean isGLExtensionSupported(String sglExtStr) {
+         return nIsGLExtensionSupported(nativeCtxInfo, sglExtStr);
+     }
+ 
+-    boolean isNPOTSupported() {
++    protected boolean isNPOTSupported() {
+         return (isGLExtensionSupported("GL_ARB_texture_non_power_of_two")
+                     || isGLExtensionSupported("GL_OES_texture_npot"));
+     }
+ 
+-    abstract int getAdapterCount();
++    protected abstract int getAdapterCount();
+ 
+-    abstract int getAdapterOrdinal(long nativeScreen);
++    protected abstract int getAdapterOrdinal(long nativeScreen);
+ 
+-    abstract void updateDeviceDetails(HashMap deviceDetails);
++    protected abstract void updateDeviceDetails(HashMap deviceDetails);
+ 
+-    void printDriverInformation(int adapter) {
++    protected void printDriverInformation(int adapter) {
+         /* We are assuming a system with a single or homogeneous GPUs. */
+         System.out.println("Graphics Vendor: " + nGetGLVendor(nativeCtxInfo));
+         System.out.println("       Renderer: " + nGetGLRenderer(nativeCtxInfo));
+diff --git a/modules/graphics/src/main/java/com/sun/prism/es2/GLGPUInfo.java b/modules/graphics/src/main/java/com/sun/prism/es2/GLGPUInfo.java
+--- a/modules/graphics/src/main/java/com/sun/prism/es2/GLGPUInfo.java
++++ b/modules/graphics/src/main/java/com/sun/prism/es2/GLGPUInfo.java
+@@ -25,7 +25,7 @@
+ 
+ package com.sun.prism.es2;
+ 
+-class GLGPUInfo {
++public class GLGPUInfo {
+ 
+     final String vendor;    // Information extracted from the GL_VENDOR string
+     final String model;     // Information extracted from the GL_RENDERER string
+diff --git a/modules/graphics/src/main/java/com/sun/prism/es2/GLPixelFormat.java b/modules/graphics/src/main/java/com/sun/prism/es2/GLPixelFormat.java
+--- a/modules/graphics/src/main/java/com/sun/prism/es2/GLPixelFormat.java
++++ b/modules/graphics/src/main/java/com/sun/prism/es2/GLPixelFormat.java
+@@ -32,7 +32,7 @@
+ import com.sun.javafx.PlatformUtil;
+ import com.sun.prism.impl.PrismSettings;
+ 
+-class GLPixelFormat {
++public class GLPixelFormat {
+     final private Attributes attributes;
+     final private long nativeScreen;
+     private long nativePFInfo;
+@@ -68,7 +68,7 @@
+         return nativePFInfo;
+     }
+ 
+-    static class Attributes {
++    public static class Attributes {
+         //  These definitions are used by both the Mac, Win and X11 subclasses
+         final static int RED_SIZE      = 0;
+         final static int GREEN_SIZE    = 1;
