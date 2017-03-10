@@ -153,7 +153,7 @@ At this point, Eclipse should be able to compile JFXGL.
 Well, mostly.
 
 (You may need to "Refresh" the project, so Eclipse detects the classpath changes made by Jerkar.
-Also, double check you configured **Jerkar's classpath variables in Eclipse).
+Also, double check you configured Jerkar's classpath variables in Eclipse).
 
 We should get some compiler errors for the JFXGL project. Eclipse will bury them in a sea of
 errors from the other projects, but you can filter the "Problems" view by going to its menu (it looks
@@ -191,7 +191,7 @@ To fix these compiler errors, we'd have to update all the downstream code that u
 the JFXGL patch. Frankly, I'm too lazy to do that, and it would make the patch much bigger anyway.
 We won't actually need those classes anymore, so who cares if they no longer compile.
 
-Now, we can recompile JFXGL and all the compiler errors should be gone.
+Now, we can recompile JFXGL and all the compiler errors for JFXGL should be gone.
 
 **Congratulation! You should have a working JFXGL build environment now!**
 

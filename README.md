@@ -11,7 +11,7 @@
 
 JFXGL was developed as a component for my upcoming Java-based 2D video game engine, the [Horde Engine][horde].
 
-[horde]:https://www.cuchazinteractive.com/horde-engine
+[horde]:https://www.cuchazinteractive.com/
 
 This project is essentially one giant hack. It works by modifying a small part of the [OpenJFX][openjfx]
 project to allow extending the rendering and input systems to use LWJGL/GLFW instead of the cross-platform
@@ -23,10 +23,16 @@ but it's the first way I found that works, and the resulting code has good perfo
 
 ## Getting started
 
-JFXGL is designed to work just like LWJGL3 and leaves you complete control over your window
-and the render loop. JFXGL lets you call the JavaFX rendering system just like any other rendering
-command in an OpenGL application. Once you've [downloaded JFXGL](#download), add it to your classpath.
-Then the following example will help you get started.
+Since JFXGL is such a haphazard hack, I can only guarantee it works with one specific verison of one specific
+JRE implementation. Specifically, you'll need [OpenJDK 8u121][8u121] to run JFXGL (The Oracle version is almost
+exactly the same thing). Other JREs might work, or they might not. I have no idea.
+
+[8u121]: http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
+
+Once you have the One Compatible JRE, then JFXGL is designed to work just like LWJGL3 and leave you complete
+control over your window and the render loop. JFXGL lets you call the JavaFX rendering system just like any
+other rendering command in an OpenGL application. Once you've [downloaded JFXGL](#download), add it to your
+classpath. Then the following example will help you get started.
 
 ```java
 package cuchaz.jfxgl.demo;
@@ -219,13 +225,11 @@ JFXGL is copyright Jeff Martin ("Cuchaz") and is released under the same license
 
 JFXGL relies crucially on modifications to OpenJFX to allow extension of the rendering system. This means
 the project is inexplicably tied to a particular version of the JRE. Specifically, JFXGL is developed against
-[OpenJDK v8u121-b13][8u121]. In future versions of the JRE, implementation-specific details upon which JFXGL
+[OpenJDK v8u121][8u121]. In future versions of the JRE, implementation-specific details upon which JFXGL
 relies may be changed, or removed entirely. There's no guarantee the techniques used by JFXGL will be compatible
 at all with future versions of OpenJDK. Applications using JFXGL are best served by distributing this specific
 version of the JRE along with the application. Since JFXGL was originally designed for games, I figured this
 wouldn't be much of a burden. This might be a more consequential limitation for smaller applications though.
-
-[8u121]: http://hg.openjdk.java.net/jdk8u/jdk8u/tags
 
 Although JFXGL depends on modifications to the JavaFX JRE extension, it is also designed to work at runtime
 on an unmodified version of the JRE. This works by dynamically transforming JRE classes at runtime
