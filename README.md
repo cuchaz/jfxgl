@@ -23,16 +23,32 @@ but it's the first way I found that works, and the resulting code has good perfo
 
 ## Getting started
 
-Since JFXGL is such a haphazard hack, I can only guarantee it works with one specific verison of one specific
+Since JFXGL is such a ridiculous hack, I can only guarantee it works with one specific verison of one specific
 JRE implementation. Specifically, you'll need [OpenJDK 8u121][8u121] to run JFXGL (The Oracle version is almost
 exactly the same thing). Other JREs might work, or they might not. I have no idea.
 
 [8u121]: http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
 
-Once you have the One Compatible JRE, then JFXGL is designed to work just like LWJGL3 and leave you complete
-control over your window and the render loop. JFXGL lets you call the JavaFX rendering system just like any
-other rendering command in an OpenGL application. Once you've [downloaded JFXGL](#download), add it to your
-classpath. Then the following example will help you get started.
+Then, you'll need to gather the JFXGL's dependencies for your project. Aside from the JRE, JFXGL also depends on
+[ASM][asm] and [LWGJL3][lwjgl]. LWJGL3 has a wonderful [download page][lwjgl-download] you can use. To get
+ASM, you can use this module descriptor in your favorite build tool:
+```
+org.ow2.asm:asm:5.2
+```
+or just [download it directly from Maven Central][asm-download].
+
+[lwjgl-download]: https://www.lwjgl.org/download
+[asm-download]: http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22org.ow2.asm%22%20AND%20a%3A%22asm%22
+
+(Once JFXGL gets more stable, we can upload it to Maven Central too, and use fancy dependency management features
+to download these automatically for you. Until then, we'll just do this the hard way).
+
+[asm]: http://asm.ow2.org/
+
+JFXGL is designed to work just like LWJGL3 and leave you complete control over your window and the render loop.
+JFXGL lets you call the JavaFX rendering system just like any other rendering command in an OpenGL application.
+Once you've downloaded JFXGL (see "Download" section below), added it to your classpath, and made sure the correct
+JRE and dependencies are present, then the following example will help you get started:
 
 ```java
 package cuchaz.jfxgl.demo;
@@ -200,14 +216,14 @@ public class HelloWorldPane {
 
 See the [JFXGL-demos][demos] project for more examples.
 
-[demos]: TODO: demos URL
+[demos]: https://bitbucket.org/cuchaz/jfxgl-demos
 
 
-## Download  {#download}
+## Download
 
 The most current release is `v0.1`.
 
-TODO: download link.
+[Download JFXGL v0.1](https://bitbucket.org/!api/2.0/snippets/cuchaz/AeR5M/eaa041c92cd6a71372d60e3e344c93e560b08f0e/files/cuchaz.jfxgl-0.1.jar)
 
 *(When JFXGL is stable enough, maybe we can think about uploading it to [Maven Central][mvn].)*
 
