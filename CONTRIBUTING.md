@@ -138,8 +138,9 @@ Set "JRE_HOME" to `jfxgl/openjdk-8u121-noFX`, then "Finish". Make sure the JRE n
 exactly "openjdk-8u121-noFX".
 
 JFXGL uses the [Jerkar][jerkar] build tool to handle compilation and dependency management.
-[Install Jerkar][install-jerkar] if you haven't already (and make sure to setup the classpath
-variables in Eclipse), then generate the classpath for JFXGL:
+JFXGL distributes Jerkar in embedded mode, so you don't need to install Jerkar to use it.
+You still need to [create classpath variables in Eclipse][install-jerkar] though (find the
+"Setup Eclipse" section). Once that's done, you can generate the Eclipse `.classpath` file:
 ```
 $ cd jfxgl/JFXGL
 $ jerkar eclipse#generateFiles
@@ -153,7 +154,7 @@ At this point, Eclipse should be able to compile JFXGL.
 Well, mostly.
 
 (You may need to "Refresh" the project, so Eclipse detects the classpath changes made by Jerkar.
-Also, double check you configured Jerkar's classpath variables in Eclipse).
+Also, double check you configured Jerkar's [classpath variables][install-jerkar] in Eclipse).
 
 We should get some compiler errors for the JFXGL project. Eclipse will bury them in a sea of
 errors from the other projects, but you can filter the "Problems" view by going to its menu (it looks

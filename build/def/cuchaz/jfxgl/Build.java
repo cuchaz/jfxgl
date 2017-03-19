@@ -25,12 +25,10 @@ import org.jerkar.tool.builtins.javabuild.JkJavaPacker;
 
 public class Build extends JkJavaBuild {
 	
-	private JkBuildPluginEclipse eclipse;
-	
 	public Build() {
 		// tell the eclipse plugin to use the special JDK without JavaFX
 		// NOTE: you should create a JRE in the  eclipse workspace needs to have a JRE with this name!
-		eclipse = new JkBuildPluginEclipse();
+		JkBuildPluginEclipse eclipse = new JkBuildPluginEclipse();
 		eclipse.setStandardJREContainer("openjdk-8u121-noFX");
 		plugins.configure(eclipse);
 	}
@@ -62,10 +60,10 @@ public class Build extends JkJavaBuild {
 		return JkDependencies.builder()
 			
 			// OpenJFX modules (already compiled)
-			.on(projectClasses("../openjfx/modules/controls")).scope(PROVIDED)
-			.on(projectClasses("../openjfx/modules/fxml")).scope(PROVIDED)
-			.on(projectClasses("../openjfx/modules/graphics")).scope(PROVIDED)
-			.on(projectClasses("../openjfx/modules/base")).scope(PROVIDED)
+			.on(new File("../openjfx/modules/controls/bin")).scope(PROVIDED)
+			.on(new File("../openjfx/modules/fxml/bin")).scope(PROVIDED)
+			.on(new File("../openjfx/modules/graphics/bin")).scope(PROVIDED)
+			.on(new File("../openjfx/modules/base/bin")).scope(PROVIDED)
 			
 			// 3rd-party libs
 			.on("org.ow2.asm:asm:5.2")
@@ -74,13 +72,6 @@ public class Build extends JkJavaBuild {
 			.build();
 	}
 	
-	private File projectClasses(String path) {
-		File projectDir = new File(path);
-		File classesDir = new File(projectDir, "bin");
-		eclipse.addProjectFromClasses(classesDir, projectDir);
-		return classesDir;
-	}
-
 	public static JkDependencies lwjgl(String version, String ... modules) {
 		JkDependencies deps = lwjgl(version, (String)null);
 		for (String module : modules) {
