@@ -144,6 +144,7 @@ import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
 import cuchaz.jfxgl.JFXGL;
 import cuchaz.jfxgl.controls.OpenGLPane;
+import cuchaz.jfxgl.prism.JFXGLContext;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -198,13 +199,13 @@ public class HelloWorldPane {
 	
 			// create the UI
 			glpane = new OpenGLPane();
-			glpane.setRenderer(() -> render());
+			glpane.setRenderer((context) -> render(context));
 			glpane.getChildren().add(new Label("Hello World!"));
 			stage.setScene(new Scene(glpane));
 		}
 		
 		@CalledByMainThread
-		private void render() {
+		private void render(JFXGLContext context) {
 			
 			GL11.glClearColor(0.8f, 0.5f, 0.5f, 1f);
 			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
