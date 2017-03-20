@@ -9,19 +9,24 @@
  *************************************************************************/
 package cuchaz.jfxgl.controls;
 
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
 import com.sun.javafx.geom.BaseBounds;
 import com.sun.javafx.geom.RectBounds;
 import com.sun.javafx.scene.DirtyBits;
 import com.sun.javafx.sg.prism.NGRegion;
+import com.sun.javafx.tk.RenderJob;
 import com.sun.javafx.tk.TKPulseListener;
 import com.sun.javafx.tk.Toolkit;
 import com.sun.prism.Graphics;
 
 import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
+import cuchaz.jfxgl.GLState;
+import cuchaz.jfxgl.InJavaFXGLContext;
 import cuchaz.jfxgl.prism.JFXGLContext;
+import cuchaz.jfxgl.prism.JFXGLContexts;
 import cuchaz.jfxgl.prism.OffscreenBuffer;
 import javafx.animation.AnimationTimer;
 import javafx.scene.layout.Background;
@@ -29,15 +34,24 @@ import javafx.scene.layout.StackPane;
 
 public class OpenGLPane extends StackPane {
 	
-	private static class OpenGLNode extends NGRegion {
+	public static class OpenGLNode extends NGRegion {
 	
 		private final OpenGLPane pane;
 		
+		private JFXGLContext context;
 		private OffscreenBuffer buf;
+		
+		private GLState glstate = new GLState(
+			GLState.Blend, GLState.BlendFunc, GLState.ShaderProgram,
+			GLState.ActiveTexture, GLState.Texture2D[0],
+			GLState.VertexArray, GLState.ArrayBuffer
+		);
 		
 		@CalledByEventsThread
 		public OpenGLNode(OpenGLPane pane) {
+			
 			this.pane = pane;
+			this.context = null;
 			
 			// this node should never have any backgrounds
 			updateBackground(Background.EMPTY);
@@ -48,11 +62,17 @@ public class OpenGLPane extends StackPane {
 		public void release() {
 			super.release();
 			
-			// cleanup
-			if (buf != null) {
-				buf.cleanup();
-				buf = null;
-			}
+			// need to cleanup on the render thread
+			Toolkit.getToolkit().addRenderJob(new RenderJob(() -> {
+				
+				// cleanup
+				if (buf != null) {
+					buf.cleanup();
+					buf = null;
+				}
+				JFXGLContexts.cleanupPane(this);
+				
+			}));
 		}
 
 		@Override
@@ -61,84 +81,95 @@ public class OpenGLPane extends StackPane {
 		}
 
 		@Override
+		@InJavaFXGLContext
 		@CalledByMainThread
 		protected void renderContent(Graphics g) {
+			
+			// get our node bounds
+			// NOTE: JavaFX apparently uses the y axis down convention
+			BaseBounds bounds = getCompleteBounds(new RectBounds(), g.getTransformNoClone());
+			if (g.getClipRectNoClone() != null) {
+				bounds.intersectWith(g.getClipRectNoClone());
+			}
+			int w = (int)bounds.getWidth();
+			int h = (int)bounds.getHeight();
+			
+			// make the context if needed
+			if (context == null) {
+				// NOTE: make a context that's compatible with JavaFX, which means we need to be backwards-compatible
+				GLFW.glfwDefaultWindowHints();
+				context = JFXGLContexts.makeNewPane(this);
+			}
+				
+			// init the pane if needed (in its GL context)
+			if (pane.initializer != null) {
+				
+				context.makeCurrent();
+				context.updateViewportAndDepthTest(0, 0, w, h, false);
+				
+				pane.initializer.init(context);
+				
+				JFXGLContexts.javafx.makeCurrent();
+				
+				// don't call the initializer again
+				pane.initializer = null;
+			}
 			
 			if (pane.renderer != null) {
 				
 				// TODO: apparently JavaFX already allocated a framebuf for this?
 				// use that instead of our own?
 				
-				// get our node bounds
-				// NOTE: JavaFX apparently uses the y axis down convention
-				BaseBounds bounds = getCompleteBounds(new RectBounds(), g.getTransformNoClone());
-				if (g.getClipRectNoClone() != null) {
-					bounds.intersectWith(g.getClipRectNoClone());
-				}
-				int w = (int)bounds.getWidth();
-				int h = (int)bounds.getHeight();
-				
 				// is there anything to draw?
 				if (w > 0 && h > 0) {
-					
-					JFXGLContext context = JFXGLContext.get();
-					
-					// backup current OpenGL state
-					final int GLBackupBits = 0
-						| GL11.GL_COLOR_BUFFER_BIT
-						| GL11.GL_DEPTH_BUFFER_BIT
-						| GL11.GL_ENABLE_BIT
-						| GL11.GL_TEXTURE_BIT
-						| GL11.GL_TRANSFORM_BIT
-						| GL11.GL_VIEWPORT_BIT;
-					int oldShaderId = context.getShaderProgram();
-					GL11.glPushAttrib(GLBackupBits);
-					
-					// do we need to resize the buffer?
-					if (buf == null) {
-						buf = new OffscreenBuffer(context, w, h);
-					} else {
-						buf.resize(w, h);
-					}
 					
 					// JavaFX's renderer has a crap-ton of internal caching and buffering!
 					// I can't quite figure out how to bypass all that from the outside,
 					// but calling g.clearQuad() apparently flushes everything so we can
 					// render with raw OpenGL and expect it not to be overwritten again
 					// later by some other buffer flush.
-					g.clearQuad(
-						bounds.getMinX(),
-						bounds.getMinY(),
-						bounds.getMaxX(),
-						bounds.getMaxY()
-					);
-					
-					// go back to a semi-normal OpenGL state
-					GL11.glDisable(GL11.GL_BLEND);
-					GL11.glDepthMask(false);
-					GL11.glDisable(GL11.GL_DEPTH_TEST);
-					GL11.glDisable(GL11.GL_SCISSOR_TEST);
-					
-					// call the downstream renderer
-					GL11.glPushAttrib(GL11.GL_VIEWPORT_BIT);
-					context.updateViewportAndDepthTest(0, 0, w, h, false);
-					int oldFboId = buf.bind();
-					pane.renderer.run();
-					buf.unbind(oldFboId);
-					GL11.glPopAttrib();
-					
-					// render pane fbo to javafx fbo
-					boolean yflip = true; // JavaFX apparently renders upside down
 					int rx = (int)bounds.getMinX();
 					int ry = (int)bounds.getMinY();
 					int tw = g.getRenderTarget().getContentWidth();
 					int th = g.getRenderTarget().getContentHeight();
 					ry = th - ry - h;
+					g.clearQuad(rx, ry, rx + tw, ry + th);
+					// TODO: figure out what this does and flush the things manually
+					// that way we could render panes with transparency
+					
+					// switch to the pane GL context
+					context.makeCurrent();
+					
+					// do we need to resize the buffer?
+					boolean wasResized;
+					if (buf == null) {
+						buf = new OffscreenBuffer(context, w, h);
+						wasResized = true;
+					} else {
+						wasResized = buf.resize(w, h);
+					}
+					if (wasResized) {
+						if (pane.resizer != null) {
+							pane.resizer.resize(context, w, h);
+						}
+					}
+					
+					// call the downstream renderer
+					buf.bind();
+					pane.renderer.render(context);
+					
+					JFXGLContexts.javafx.makeCurrent();
+					
+					glstate.backup();
+					
+					GL11.glDisable(GL11.GL_BLEND);
+					
+					// render pane fbo to javafx fbo
+					boolean yflip = true; // JavaFX apparently renders upside down
 					buf.render(rx, ry, tw, th, yflip);
 					
 					// restore original JavaFX render state
-					GL11.glPopAttrib();
-					context.setShaderProgram(oldShaderId);
+					glstate.restore();
 					
 					/* DEBUG
 					System.out.println(String.format("render pane:    pos=%d,%d   size=%d,%d   clip=%s   bounds=%s",
@@ -165,8 +196,22 @@ public class OpenGLPane extends StackPane {
 			super.renderContent(g);
 		}
 	}
+	
+	public static interface Initializer {
+		void init(JFXGLContext context);
+	}
+	
+	public static interface Renderer {
+		void render(JFXGLContext context);
+	}
+	
+	public static interface Resizer {
+		void resize(JFXGLContext context, int width, int height);
+	}
 
-	public Runnable renderer = null;
+	private Initializer initializer = null;
+	private Resizer resizer = null;
+	private Renderer renderer = null;
 	
 	// NOTE: need to keep a strong reference to this listener or it will get garbage collected
 	private TKPulseListener listener = new TKPulseListener() {
@@ -211,9 +256,17 @@ public class OpenGLPane extends StackPane {
 	public OpenGLNode impl_getPeer() {
 		return (OpenGLNode)super.impl_getPeer();
 	}
+	
+	public void setInitializer(Initializer val) {
+		initializer = val;
+	}
+	
+	public void setResizer(Resizer val) {
+		resizer = val;
+	}
 
-	public void setRenderer(Runnable val) {
-		renderer = val;
+	public void setRenderer(Renderer val) {
+		this.renderer = val;
 	}
 	
 	@CalledByMainThread

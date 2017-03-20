@@ -32,7 +32,7 @@ public class TexTools {
 		// what kind of attachment is it?
 		int typeId = GL30.glGetFramebufferAttachmentParameteri(GL30.GL_FRAMEBUFFER, attachmentId, GL30.GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE);
 		if (typeId != GL11.GL_TEXTURE) {
-			throw new Error("attachment is not a texture");
+			throw new Error(String.format("attachment is not a texture: 0x%x", typeId));
 		}
 		
 		// get the texture id

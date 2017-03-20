@@ -36,58 +36,83 @@ import com.sun.prism.es2.GLContext;
 import com.sun.prism.es2.GLDrawable;
 import com.sun.prism.paint.Color;
 
+import cuchaz.jfxgl.GLState;
 import sun.misc.IOUtils;
 
 public class JFXGLContext extends GLContext {
 	
-	// everything will always use the OpenGL context on the main thread
-	// so make our context instance a singleton
-	protected static JFXGLContext instance;
+	// TODO: use caching to avoid re-setting state when it's not necessary
 	
-	private long hwnd;
-	private GLCapabilities caps;
+	public final long hwnd;
 	
-	public static void install(long hwnd) {
-		instance = new JFXGLContext(hwnd);
+	private GLCapabilities caps = null;
+	private int majorVersion;
+	private int minorVersion;
+	
+	/**
+	 * Wrap an existing OpenGL context.
+	 *
+	 * @param hwnd the hwnd of the existing context
+	 * @param sharedHwnd the handle of the context to share with
+	 */
+	public static JFXGLContext wrapExisting(long hwnd) {
+		return new JFXGLContext(hwnd);
 	}
 	
-	public static JFXGLContext get() {
-		if (instance == null) {
-			throw new IllegalStateException("JFXGLContext not initialized yet. Call init(hwnd) first.");
-		}
-		return instance;
+	/**
+	 * Make a new OpenGL Context (with a new hidden window).
+	 * 
+	 * @param sharedHwnd the handle of the context to share with
+	 */
+	public static JFXGLContext makeNewSharedWith(long sharedHwnd) {
+		
+		// sadly, we have to create a window too. contexts and windows are inseparable
+		// at least make the window hidden though
+		GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
+		long hwnd = GLFW.glfwCreateWindow(1, 1, "JavaFX", MemoryUtil.NULL, sharedHwnd);
+		
+		return new JFXGLContext(hwnd);
 	}
 	
-	protected JFXGLContext(long hwnd) {
+	private JFXGLContext(long hwnd) {
 		
 		if (hwnd <= 0) {
 			throw new IllegalArgumentException("hwnd is invalid");
 		}
 		
 		this.hwnd = hwnd;
-		
-		// create the OpenGL context
-		GLFW.glfwMakeContextCurrent(this.hwnd);
-		this.caps = GL.createCapabilities();
 	}
 	
-	public long getHwnd() {
-		return hwnd;
+	public void cleanup() {
+		GLFW.glfwDestroyWindow(hwnd);
 	}
-
+	
 	@Override
 	public long getNativeHandle() {
-		return getHwnd();
+		return hwnd;
 	}
 	
 	@Override
 	public long getNativeCtxInfo() {
-		return getHwnd();
+		return hwnd;
 	}
+	
+	public void makeCurrent() {
+		
+		JFXGLContexts.makeCurrent(this);
+		
+		// if this is the first time, get the caps
+		if (caps == null) {
+			caps = GL.createCapabilities();
 
+			majorVersion = GL11.glGetInteger(GL30.GL_MAJOR_VERSION);
+			minorVersion = GL11.glGetInteger(GL30.GL_MINOR_VERSION);
+		}
+	}
+	
 	@Override
-	public void makeCurrent(GLDrawable drawable) {
-		// this thread/window should already be current, so there's nothing left to do
+	public void makeCurrent(GLDrawable ignored) {
+		makeCurrent();
 	}
 	
 	public boolean isExtensionSupported(String sglExtStr) {
@@ -101,6 +126,24 @@ public class JFXGLContext extends GLContext {
 		} catch (IllegalAccessException ex) {
 			throw new RuntimeException("can't check extension", ex);
 		}
+	}
+	
+	/**
+	 * Returns the major version number if it's 3 or greater. Returns 0 otherwise.
+	 */
+	public int getMajorVersion() {
+		return majorVersion;
+	}
+	
+	/**
+	 * Returns the minor version number if the major version number is 3 or greater. Returns 0 otherwise.
+	 */
+	public int getMinorVersion() {
+		return minorVersion;
+	}
+	
+	public boolean isForwardCompatible() {
+		return caps.forwardCompatible;
 	}
 	
 	@Override
@@ -123,13 +166,14 @@ public class JFXGLContext extends GLContext {
 		GL11.glBlendFunc(translateScaleFactor(sFactor), translateScaleFactor(dFactor));
 	}
 	
-	private Color clearColor = null;
+	private GLState clearBuffersState = new GLState(GLState.DepthMask, GLState.ScissorTest);
 
 	@Override
 	public void clearBuffers(Color color, boolean clearColor, boolean clearDepth, boolean ignoreScissor) {
 		
-		// temporarily disable the scissor test if needed
-		if (ignoreScissor && this.scissorEnabled) {
+		clearBuffersState.backup();
+		
+		if (ignoreScissor) {
 			GL11.glDisable(GL11.GL_SCISSOR_TEST);
 		}
 
@@ -137,36 +181,25 @@ public class JFXGLContext extends GLContext {
 
 		if (clearColor) {
 			clearFlags |= GL11.GL_COLOR_BUFFER_BIT;
-			if (this.clearColor == null || !this.clearColor.equals(color)) {
-				this.clearColor = color;
-				GL11.glClearColor(this.clearColor.getRedPremult(), this.clearColor.getGreenPremult(),
-						this.clearColor.getBluePremult(), this.clearColor.getAlpha());
-			}
+			GL11.glClearColor(
+				color.getRedPremult(),
+				color.getGreenPremult(),
+				color.getBluePremult(),
+				color.getAlpha()
+			);
 		}
 
 		if (clearDepth) {
 			clearFlags |= GL11.GL_DEPTH_BUFFER_BIT;
 			
-			// temporarily enable the depth dest if needed
-			if (!this.depthTestEnabled) {
-				GL11.glDepthMask(true);
-			}
-			
+			GL11.glDepthMask(true);
 			GL11.glClear(clearFlags);
-			
-			// restore depth test if neeed
-			if (!this.depthTestEnabled) {
-				GL11.glDepthMask(false);
-			}
 			
 		} else {
 			GL11.glClear(clearFlags);
 		}
 
-		// restore the scissor test if needed
-		if (ignoreScissor && this.scissorEnabled) {
-			GL11.glEnable(GL11.GL_SCISSOR_TEST);
-		}
+		clearBuffersState.restore();
 	}
 
 	public int compileShader(URL url, boolean isVertex) {
@@ -227,6 +260,8 @@ public class JFXGLContext extends GLContext {
 	public int createRenderBuffer(int width, int height, int msaaSamples) {
 		throw new UnsupportedOperationException("IMPLEMENT ME!");
 	}
+	
+	private GLState createFBOState = new GLState(GLState.ClearColor);
 
 	@Override
 	public int createFBO(int texId) {
@@ -246,7 +281,9 @@ public class JFXGLContext extends GLContext {
 			}
 
 			// remove garbage from newly-allocated buffers
+			createFBOState.backup();
 			clearBuffers(Color.TRANSPARENT, true, false, true);
+			createFBOState.restore();
 		}
 		
 		return id;
@@ -397,25 +434,19 @@ public class JFXGLContext extends GLContext {
 		throw new UnsupportedOperationException("IMPLEMENT ME!");
 	}
 
-	private boolean scissorEnabled = false;
-	
 	@Override
 	public void scissorTest(boolean enable, int x, int y, int w, int h) {
 		if (enable) {
-			if (!this.scissorEnabled) {
-				GL11.glEnable(GL11.GL_SCISSOR_TEST);
-				this.scissorEnabled = true;
-			}
+			GL11.glEnable(GL11.GL_SCISSOR_TEST);
 			GL11.glScissor(x, y, w, h);
-		} else if (this.scissorEnabled) {
+		} else {
 			GL11.glDisable(GL11.GL_SCISSOR_TEST);
-			this.scissorEnabled = false;
 		}
 	}
 
 	@Override
 	public void setShaderProgram(int programId) {
-		// TODO: use program caching that works with push/pop attrib?
+		// TODO: use program caching in members vars?
 		GL20.glUseProgram(programId);
 	}
 	
@@ -464,6 +495,7 @@ public class JFXGLContext extends GLContext {
 		}
 		
 		clearGLErrors();
+		
 		GL11.glTexImage2D(
 			translatePrismToGL(target),
 			level,
@@ -475,7 +507,13 @@ public class JFXGLContext extends GLContext {
 			translatePrismToGL(type),
 			buf
 		);
-		return !hasGLError();
+		
+		int glerror = getGLError();
+		boolean hasError = glerror != GL11.GL_NO_ERROR;
+		if (hasError) {
+			System.err.println(String.format("WARNING: couldn't upload texture. glTexImage2D failed with code: 0x%x", glerror));
+		}
+		return !hasError;
 	}
 
 	@Override
@@ -507,22 +545,18 @@ public class JFXGLContext extends GLContext {
 		);
 	}
 	
-	private boolean depthTestEnabled = false;
-
 	@Override
 	public void updateViewportAndDepthTest(int x, int y, int w, int h, boolean depthTest) {
+		
 		GL11.glViewport(x, y, w, h);
 		
-		if (this.depthTestEnabled != depthTest) {
-			if (depthTest) {
-				GL11.glEnable(GL11.GL_DEPTH_TEST);
-				GL11.glDepthFunc(GL11.GL_LEQUAL);
-				GL11.glDepthMask(true);
-			} else {
-				GL11.glDisable(GL11.GL_DEPTH_TEST);
-				GL11.glDepthMask(false);
-			}
-			depthTestEnabled = depthTest;
+		if (depthTest) {
+			GL11.glEnable(GL11.GL_DEPTH_TEST);
+			GL11.glDepthFunc(GL11.GL_LEQUAL);
+			GL11.glDepthMask(true);
+		} else {
+			GL11.glDisable(GL11.GL_DEPTH_TEST);
+			GL11.glDepthMask(false);
 		}
 	}
 
@@ -628,17 +662,19 @@ public class JFXGLContext extends GLContext {
 	
 	@Override
 	public void enableVertexAttributes() {
-		// JavaFX apparently uses attributes in [0,3]
-		for (int i=0; i<4; i++) {
-			GL20.glEnableVertexAttribArray(i);
-		}
+		// JavaFX apparently uses attributes in [0,3], see drawIndexedQuads()
+		GL20.glEnableVertexAttribArray(0);
+		GL20.glEnableVertexAttribArray(1);
+		GL20.glEnableVertexAttribArray(2);
+		GL20.glEnableVertexAttribArray(3);
 	}
 
 	@Override
 	public void disableVertexAttributes() {
-		for (int i=0; i<4; i++) {
-			GL20.glDisableVertexAttribArray(i);
-		}
+		GL20.glDisableVertexAttribArray(0);
+		GL20.glDisableVertexAttribArray(1);
+		GL20.glDisableVertexAttribArray(2);
+		GL20.glDisableVertexAttribArray(3);
 	}
 
 	private static final int PosCoordFloats = 3;

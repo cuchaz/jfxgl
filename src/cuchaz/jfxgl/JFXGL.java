@@ -19,6 +19,7 @@ import org.lwjgl.glfw.GLFWKeyCallbackI;
 import org.lwjgl.glfw.GLFWMouseButtonCallbackI;
 import org.lwjgl.glfw.GLFWScrollCallbackI;
 import org.lwjgl.glfw.GLFWWindowFocusCallbackI;
+import org.lwjgl.opengl.GL11;
 
 import com.sun.javafx.application.ParametersImpl;
 import com.sun.javafx.application.PlatformImpl;
@@ -28,6 +29,7 @@ import cuchaz.jfxgl.glass.JFXGLPlatformFactory;
 import cuchaz.jfxgl.glass.JFXGLView;
 import cuchaz.jfxgl.glass.JFXGLWindow;
 import cuchaz.jfxgl.prism.JFXGLContext;
+import cuchaz.jfxgl.prism.JFXGLContexts;
 import cuchaz.jfxgl.prism.JFXGLFactory;
 import cuchaz.jfxgl.toolkit.JFXGLToolkit;
 import javafx.application.Application;
@@ -65,7 +67,7 @@ public class JFXGL {
 	}
 	
 	@SuppressWarnings("deprecation")
-	public static void start(long hwnd, String[] args, Application app) {
+	public static JFXGLContext start(long hwnd, String[] args, Application app) {
 		
 		// make sure JavaFX is using the OpenGL prism backend
 		System.setProperty("prism.order", "es2");
@@ -73,8 +75,20 @@ public class JFXGL {
 		// DEBUG: turn on prism logging so we can see pipeline create/init errors
 		//System.setProperty("prism.verbose", "true");
 		
+		// init the app OpenGL contexts
+		JFXGLContexts.app = JFXGLContext.wrapExisting(hwnd);
+		
+		// init the JavaFX OpenGL context
+		// NOTE: JavaFX requires a backward-compatible context, it uses some old v2 stuff
+		GLFW.glfwDefaultWindowHints();
+		JFXGLContexts.javafx = JFXGLContext.makeNewSharedWith(JFXGLContexts.app.hwnd);
+		JFXGLContexts.javafx.makeCurrent();
+		
+		// init OpenGL state expected by JavaFX rendering
+		GL11.glEnable(GL11.GL_BLEND);
+		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
+		
 		// install our various pieces into JavaFX
-		JFXGLContext.install(hwnd);
 		JFXGLFactory.install();
 		JFXGLPlatformFactory.install();
 		JFXGLToolkit.install();
@@ -93,6 +107,9 @@ public class JFXGL {
 		} catch (InterruptedException ex) {
 			throw new Error(ex);
 		}
+		
+		// go back to main context
+		JFXGLContexts.app.makeCurrent();
 		
 		// translate the String[] args into JavaFX Parameters
 		ParametersImpl.registerParameters(app, new ParametersImpl(args));
@@ -217,6 +234,8 @@ public class JFXGL {
 			}
 		};
 		existingCallbacks.windowFocus = GLFW.glfwSetWindowFocusCallback(hwnd, ourCallbacks.windowFocus);
+		
+		return JFXGLContexts.app;
 	}
 	
 	public static void runOnEventsThread(Runnable runnable) {
@@ -241,6 +260,11 @@ public class JFXGL {
 		}
 	}
 	
+	/**
+	 * Renders the JavaFX UI into the current framebuffer.
+	 * <p>
+	 * After rendering is complete, the OpenGL state is restored to what it was before calling render(). 
+	 */
 	public static void render() {
 		
 		// tell JavaFX stages and scenes to update and send render jobs (on the FX thread)
@@ -270,6 +294,21 @@ public class JFXGL {
 			if (toolkit != null) {
 				toolkit.disposePipeline();
 			}
+			JFXGLContexts.cleanup();
+		}
+	}
+
+	public static void renderLoop() {
+		
+		long appHwnd = JFXGLContexts.app.hwnd;
+		
+		GL11.glClearColor(0f, 0f, 0f, 1f);
+		
+		while (!GLFW.glfwWindowShouldClose(appHwnd)) {
+			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+			render();
+			GLFW.glfwSwapBuffers(appHwnd);
+			GLFW.glfwPollEvents();
 		}
 	}
 }

@@ -26,7 +26,7 @@ public class JFXGLFactory extends GLFactory {
 	}
 	
 	public static void install() {
-		drawable = new JFXGLDrawable(JFXGLContext.get().getHwnd());
+		drawable = new JFXGLDrawable(JFXGLContexts.app.hwnd);
 		GLFactory.platformFactory = new JFXGLFactory();
 	}
 	
@@ -45,12 +45,12 @@ public class JFXGLFactory extends GLFactory {
 
 	@Override
 	public JFXGLContext createGLContext(long hwnd) {
-		return JFXGLContext.get();
+		return JFXGLContexts.javafx;
 	}
 
 	@Override
 	public JFXGLContext createGLContext(GLDrawable drawable, GLPixelFormat pixelFormat, GLContext shareCtx, boolean vSyncRequest) {
-		return JFXGLContext.get();
+		return JFXGLContexts.javafx;
 	}
 
 	@Override
@@ -73,17 +73,10 @@ public class JFXGLFactory extends GLFactory {
 	@SuppressWarnings("rawtypes")
 	public boolean initialize(Class psClass, GLPixelFormat.Attributes attrs) {
 		
-		// NOTE: exceptions here get swallowed by GraphicsPipeline.createPipeline()
-		// so report them here explicitly
-		try {
-			
-			nativeCtxInfo = JFXGLContext.get().getHwnd();
-            gl2 = true;
+		nativeCtxInfo = JFXGLContexts.javafx.hwnd;
 		
-		} catch (Throwable t) {
-			t.printStackTrace(System.err);
-			throw t;
-		}
+		// NOTE: everyone just always sets this to true
+		gl2 = true;
 		
 		// this mode is always supported, since we're basically ignoring the
 		// mode specified by attrs and using whatever GLFW did already
@@ -111,7 +104,7 @@ public class JFXGLFactory extends GLFactory {
 	
 	@Override
 	public boolean isGLExtensionSupported(String sglExtStr) {
-		return JFXGLContext.get().isExtensionSupported(sglExtStr);
+		return JFXGLContexts.javafx.isExtensionSupported(sglExtStr);
 	}
 	
 	@Override

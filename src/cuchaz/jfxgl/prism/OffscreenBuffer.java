@@ -9,6 +9,9 @@
  *************************************************************************/
 package cuchaz.jfxgl.prism;
 
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
+
 public class OffscreenBuffer {
 
 	private JFXGLContext context;
@@ -16,6 +19,7 @@ public class OffscreenBuffer {
 	private int height = 0;
 	private int texId = 0;
 	private int fboId = 0;
+	private boolean quadDirty = true;
 	private TexturedQuad quad = null;
 	private TexturedQuad.Shader quadShader = null;
 	
@@ -27,34 +31,40 @@ public class OffscreenBuffer {
 		
 		this.context = context;
 		
-		quadShader = new TexturedQuad.Shader(context);
+		// lazily create the quad and shader,
+		// in case we want to render this buf in a different context than the one we created it in
+		// (vertex arrays aren't shared between contexts, so neither are quads)
+		quad = null;
+		quadShader = null;
 		resize(width, height);
 	}
 	
-	public void resize(int width, int height) {
-		
-		// TODO: can definitely optimize this (ie, re-use FBOs after texture changes)
+	public boolean resize(int width, int height) {
 		
 		if (this.width == width && this.height == height) {
-			return;
+			return false;
 		}
 		
 		this.width = width;
 		this.height = height;
-		
+	
+		// resize the texture
 		if (texId != 0) {
 			context.deleteTexture(texId);
 		}
-		if (fboId != 0) {
-			context.deleteFBO(fboId);
-		}
-		if (quad != null) {
-			quad.cleanup();
-		}
-		
 		texId = context.createTexture(width, height);
-		fboId = context.createFBO(texId);
-		quad = new TexturedQuad(0, 0, width, height, texId, quadShader);
+		
+		// update the framebuf
+		if (fboId == 0) {
+			fboId = GL30.glGenFramebuffers();
+		}
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fboId);
+		GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, texId, 0);
+		
+		// remove the old quad
+		quadDirty = true;
+		
+		return true;
 	}
 	
 	public int getTexId() {
@@ -76,10 +86,22 @@ public class OffscreenBuffer {
 	}
 	
 	public void render(int x, int y, int w, int h, boolean yflip) {
+		
+		if (quadShader == null) {
+			quadShader = new TexturedQuad.Shader(context);
+		}
 		quadShader.bind();
 		quadShader.setViewPos(x, y);
 		quadShader.setViewSize(w, h);
 		quadShader.setYFlip(yflip);
+		
+		if (quadDirty) {
+			quadDirty = false;
+			if (quad != null) {
+				quad.cleanup();
+			}
+			quad = new TexturedQuad(0, 0, width, height, texId, quadShader);
+		}
 		quad.render();
 	}
 	
@@ -89,8 +111,14 @@ public class OffscreenBuffer {
 	
 	public void cleanup() {
 		context.deleteTexture(texId);
-		context.deleteFBO(fboId);
-		quad.cleanup();
-		quadShader.cleanup();
+		if (fboId != 0) {
+			GL30.glDeleteFramebuffers(fboId);
+		}
+		if (quad != null) {
+			quad.cleanup();
+		}
+		if (quadShader != null) {
+			quadShader.cleanup();
+		}
 	}
 }

@@ -17,6 +17,7 @@ import com.sun.javafx.tk.RenderJob;
 import com.sun.javafx.tk.quantum.QuantumRenderer;
 
 import cuchaz.jfxgl.glass.JFXGLWindow;
+import cuchaz.jfxgl.prism.JFXGLContexts;
 
 public class JFXGLRenderer extends QuantumRenderer {
 	
@@ -65,11 +66,20 @@ public class JFXGLRenderer extends QuantumRenderer {
 			jobQueue.clear();
 		}
 		
-		// run all the render jobs
-		for (Runnable job : jobs) {
-			job.run();
+		if (!jobs.isEmpty()) {
+		
+			// switch to JavaFX context for JavaFX rendering
+			JFXGLContexts.javafx.makeCurrent();
+		
+			// run all the render jobs
+			for (Runnable job : jobs) {
+				job.run();
+			}
+			jobs.clear();
+			
+			// switch back to app context for non-JavaFX rendering
+			JFXGLContexts.app.makeCurrent();
 		}
-		jobs.clear();
 		
 		// copy the javafx framebuffer to the main framebuffer
 		if (JFXGLWindow.mainWindow != null) {

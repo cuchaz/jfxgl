@@ -14,7 +14,6 @@ import java.nio.IntBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWWindowSizeCallbackI;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryStack;
 
 import com.sun.glass.events.WindowEvent;
@@ -27,35 +26,36 @@ import com.sun.javafx.application.PlatformImpl;
 
 import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
+import cuchaz.jfxgl.GLState;
+import cuchaz.jfxgl.InAppGLContext;
+import cuchaz.jfxgl.InJavaFXGLContext;
 import cuchaz.jfxgl.prism.JFXGLContext;
+import cuchaz.jfxgl.prism.JFXGLContexts;
 import cuchaz.jfxgl.prism.OffscreenBuffer;
 
 public class JFXGLWindow extends Window {
 	
 	public static JFXGLWindow mainWindow = null;
 	
-	private static int GLBackupBits = GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_ENABLE_BIT;
-	
-	private long hwnd = 0;
 	private JFXGLContext context = null;
 	
 	private JFXGLView view = null;
-	private GLFWWindowSizeCallbackI windowSizeCallback; 
+	private GLFWWindowSizeCallbackI windowSizeCallback = null;
+	private GLFWWindowSizeCallbackI existingWindowSizeCallback = null;
 	
 	private int width = 0;
 	private int height = 0;
 	private OffscreenBuffer buf = null;
 	private boolean fboDirty = true;
-	
-	private boolean isRendering = false;
+	private GLState glstate = new GLState(
+		GLState.Blend, GLState.BlendFunc, GLState.ShaderProgram,
+		GLState.ActiveTexture, GLState.Texture2D[0],
+		GLState.VertexArray, GLState.ArrayBuffer,
+		GLState.Viewport
+	);
 	
 	protected JFXGLWindow(Window owner, Screen screen, int styleMask) {
 		super(owner, screen, styleMask);
-	}
-	
-	@Override
-	@CalledByEventsThread
-	protected long _createWindow(long ownerhwnd, long screenhwnd, int mask) {
 		
 		// only ever create one window
 		if (mainWindow != null) {
@@ -63,9 +63,8 @@ public class JFXGLWindow extends Window {
 		}
 		mainWindow = this;
 		
-		// and don't actually create it either
-		// use the one that was already created by the main thread
-		hwnd = JFXGLContext.get().getHwnd();
+		// get our context
+		context = JFXGLContexts.app;
 		
 		// NOTE: always keep a strong reference to callbacks, or they get garbage collected
 		windowSizeCallback = (long hwndAgain, int width, int height) -> {
@@ -84,13 +83,28 @@ public class JFXGLWindow extends Window {
 					view.notifyResize(this.width, this.height);
 				}
 			});
+			
+			// call the existing callback, if any
+			if (existingWindowSizeCallback != null) {
+				existingWindowSizeCallback.invoke(hwndAgain, width, height);
+			}
 		};
-		GLFW.glfwSetWindowSizeCallback(hwnd, windowSizeCallback);
+		existingWindowSizeCallback = GLFW.glfwSetWindowSizeCallback(context.hwnd, windowSizeCallback);
 		
 		// NOTE: don't bother trying to read the window size here
 		// nothing cares if we try anyway
+	}
+	
+	@Override
+	@CalledByEventsThread
+	protected long _createWindow(long ownerhwnd, long screenhwnd, int mask) {
 		
-		return hwnd;
+		// NOTE: this is called by the super constructor, so it happens BEFORE field initialization!!
+		// meaning, we can't assign fields here, because they will get overwritten later!
+		
+		// don't actually create a window here
+		// use the one that was already created by the main thread
+		return JFXGLContexts.app.hwnd;
 	}
 
 	@Override
@@ -114,7 +128,6 @@ public class JFXGLWindow extends Window {
 	@CalledByEventsThread
 	protected boolean _setView(long hwnd, View view) {
 		
-		this.hwnd = hwnd;
 		this.view = (JFXGLView)view;
 		
 		// tell JavaFX to update the view size
@@ -124,7 +137,7 @@ public class JFXGLWindow extends Window {
 			try (MemoryStack m = MemoryStack.stackPush()) {
 				IntBuffer widthBuf = m.callocInt(1);
 				IntBuffer heightBuf = m.callocInt(1);
-				GLFW.glfwGetWindowSize(hwnd, widthBuf, heightBuf);
+				GLFW.glfwGetWindowSize(context.hwnd, widthBuf, heightBuf);
 				width = widthBuf.get(0);
 				height = heightBuf.get(0);
 			}
@@ -141,74 +154,49 @@ public class JFXGLWindow extends Window {
 	}
 	
 	@CalledByMainThread
+	@InJavaFXGLContext
 	public void renderBegin() {
 		
-		// let JavaFX wank around in its own attribute frame
-		if (!isRendering) {
-			
-			// NOTE: make sure the main framebuffer is bound when messing with the attribute stack
-			// see: https://www.opengl.org/discussion_boards/showthread.php/184670-glPopAttrib-Invalid-draw-bindings
-			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-			
-			GL11.glPushAttrib(GLBackupBits);
-			isRendering = true;
-		}
-		
-		if (context == null) {
-			context = JFXGLContext.get();
+		// do we need to resize the framebuffer?
+		if (buf == null) {
 			buf = new OffscreenBuffer(context, width, height);
 		}
-		
-		// do we need to resize the framebuffer?
 		if (fboDirty) {
 			fboDirty = false;
 			buf.resize(width, height);
 		}
-		
-		// init OpenGL state expected by JavaFX rendering
-		GL11.glEnable(GL11.GL_BLEND);
-		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
-		
-		GL11.glDepthMask(false);
-		GL11.glDisable(GL11.GL_DEPTH_TEST);
-		GL11.glDisable(GL11.GL_SCISSOR_TEST);
-		
-		GL11.glClearColor(0, 0, 0, 0);
-		
-		// TODO: does resetting this state every frame cause problems?
-		// GLContext instances (and native code) cache some OpenGL state
 	}
 	
 	@CalledByMainThread
+	@InJavaFXGLContext
 	public void renderEnd() {
-		
-		if (isRendering) {
-
-			// NOTE: make sure the main framebuffer is bound when messing with the attribute stack
-			// see: https://www.opengl.org/discussion_boards/showthread.php/184670-glPopAttrib-Invalid-draw-bindings
-			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-			
-			GL11.glPopAttrib();
-			isRendering = false;
-		}
+	
+		// nothing to do
 	}
 	
 	@CalledByMainThread
 	public int getFBOId() {
-		return buf.getFboId();
+		if (buf != null) {
+			return buf.getFboId();
+		}
+		return 0;
 	}
 	
+	@CalledByMainThread
+	@InAppGLContext
 	public void renderFramebuf() {
-		
-		// copy our framebuffer to the main framebuffer
-		if (context != null) {
+		if (buf != null) {
 			
-			// JavaFX might have left some weird OpenGL state, so fix that now
+			glstate.backup();
+			
 			GL11.glEnable(GL11.GL_BLEND);
 			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-			context.updateViewportAndDepthTest(0, 0, width, height, false);
+			GL11.glViewport(0, 0, width, height);
 			
+			// composite our framebuffer onto the main framebuffer
 			buf.render();
+			
+			glstate.restore();
 		}
 	}
 	

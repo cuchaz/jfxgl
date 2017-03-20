@@ -30,6 +30,7 @@ import com.sun.prism.es2.ES2Pipeline;
 import com.sun.prism.impl.PrismSettings;
 import com.sun.scenario.DelayedRunnable;
 
+import cuchaz.jfxgl.InJavaFXGLContext;
 import javafx.scene.Scene;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
@@ -50,6 +51,7 @@ public class JFXGLToolkit extends QuantumToolkit {
 	private DelayedRunnable animationRunnable;
 
 	@Override
+	@InJavaFXGLContext
 	public boolean init() {
 		
 		// create the opengl pipeline
@@ -82,6 +84,7 @@ public class JFXGLToolkit extends QuantumToolkit {
 	}
 	
 	@Override
+	@InJavaFXGLContext
 	public void startup(Runnable r) {
 		
 		CountDownLatch startupLatch = new CountDownLatch(1);
@@ -121,7 +124,7 @@ public class JFXGLToolkit extends QuantumToolkit {
 			ie.printStackTrace();
 		}
 		
-		// create OpenGL context for the main thread
+		// init JavaFX OpenGL rendering
 		ES2Pipeline.getDefaultResourceFactory();
 	}
 	
