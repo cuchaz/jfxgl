@@ -217,6 +217,7 @@ public class JFXGLView extends View {
 		switch (action) {
 			case GLFW.GLFW_PRESS: return KeyEvent.PRESS;
 			case GLFW.GLFW_RELEASE: return KeyEvent.RELEASE;
+			case GLFW.GLFW_REPEAT: return KeyEvent.PRESS;
 			default: throw new RuntimeException("unknown key action: " + action);
 		}
 	}
