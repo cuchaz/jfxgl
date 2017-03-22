@@ -1,5 +1,5 @@
 
-# JXFGL
+# JFXGL
 
 *Glue code that allows you to use [JavaFX][javafx] in your [OpenGL][opengl]/[LWJGL3][lwjgl] app.*
 
