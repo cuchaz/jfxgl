@@ -222,9 +222,10 @@ See the [JFXGL-demos][demos] project for more examples.
 
 ## Download
 
-The most current release is `v0.1`.
+The most current release is `v0.2`.
 
-[Download JFXGL v0.1](https://bitbucket.org/!api/2.0/snippets/cuchaz/AeR5M/eaa041c92cd6a71372d60e3e344c93e560b08f0e/files/cuchaz.jfxgl-0.1.jar)
+ * [Download JFXGL v0.2](https://bitbucket.org/cuchaz/jfxgl/downloads/cuchaz.jfxgl-0.2.jar)
+ * [Download JFXGL v0.1](https://bitbucket.org/!api/2.0/snippets/cuchaz/AeR5M/eaa041c92cd6a71372d60e3e344c93e560b08f0e/files/cuchaz.jfxgl-0.1.jar)
 
 *(When JFXGL is stable enough, maybe we can think about uploading it to [Maven Central][mvn].)*
 
