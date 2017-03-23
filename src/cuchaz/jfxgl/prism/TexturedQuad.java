@@ -9,6 +9,7 @@
  *************************************************************************/
 package cuchaz.jfxgl.prism;
 
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
@@ -34,12 +35,20 @@ public class TexturedQuad {
 		private final int yflipLoc;
 		
 		public Shader(JFXGLContext context) {
+			this(
+				context,
+				Shader.class.getResource("vertex.glsl"),
+				Shader.class.getResource("fragment.glsl")
+			);
+		}
+		
+		public Shader(JFXGLContext context, URL vertexShader, URL fragmentShader) {
 			
 			this.context = context;
 			
 			// make the shader
-			vertexId = context.compileShader(Shader.class.getResource("vertex.glsl"), true);
-			fragmentId = context.compileShader(Shader.class.getResource("fragment.glsl"), false);
+			vertexId = context.compileShader(vertexShader, true);
+			fragmentId = context.compileShader(fragmentShader, false);
 			posLoc = 0;
 			texCoordLoc = 1;
 			id = context.createProgram(
@@ -81,7 +90,8 @@ public class TexturedQuad {
 	private final int vaoId;
 	private final int vboId;
 	private final int iboId;
-	private final int texId;
+	
+	public int texId;
 	
 	public TexturedQuad(int x, int y, int w, int h, int texId, Shader shader) {
 		
