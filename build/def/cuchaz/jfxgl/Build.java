@@ -59,6 +59,11 @@ public class Build extends JkJavaBuild {
 	public JkDependencies dependencies() {
 		return JkDependencies.builder()
 			
+			// test libs
+			// NOTE: these need to go first, so we override Junit libs in the OpenJFX modules
+			.on("junit:junit:4.12").scope(TEST)
+			.on("org.hamcrest:hamcrest-all:1.3").scope(TEST)
+			
 			// OpenJFX modules (already compiled)
 			.on(new File("../openjfx/modules/controls/bin")).scope(PROVIDED)
 			.on(new File("../openjfx/modules/fxml/bin")).scope(PROVIDED)
@@ -68,10 +73,6 @@ public class Build extends JkJavaBuild {
 			// 3rd-party libs
 			.on("org.ow2.asm:asm:5.2")
 			.on(lwjgl("3.1.1", "glfw", "jemalloc", "opengl"))
-			
-			// test libs
-			.on("junit:junit:4.12").scope(TEST)
-			.on("org.hamcrest:hamcrest-all:1.3").scope(TEST)
 			
 			.build();
 	}

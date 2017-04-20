@@ -9,20 +9,18 @@
  *************************************************************************/
 package cuchaz.jfxgl;
 
+import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.*;
+
 import org.junit.Test;
 
 
 public class TestJFXGLLauncher {
 	
-	// NOTE: don't use hamcrest inside the launched code
-	// it can't deal with being loaded by two different classloaders
-	// and I don't know how to stop the main classloader from loading it
-	
 	public static class LaunchableCheckClassloader {
 		public static void launch(String[] args) {
-			String exp = JFXGLLauncher.Loader.class.getName();
-			String obs = LaunchableCheckArgs.class.getClassLoader().getClass().getName();
-			assert (obs == exp) : String.format("%s != %s", obs, exp);
+			// NOTE: compare the class names, since the class isntances will be from different classloaders
+			assertThat(LaunchableCheckArgs.class.getClassLoader().getClass().getName(), is(JFXGLLauncher.Loader.class.getName()));
 		}
 	}
 	
@@ -33,9 +31,7 @@ public class TestJFXGLLauncher {
 	
 	public static class LaunchableCheckArgs {
 		public static void launch(String[] args) {
-			assert (args.length == 2) : String.format("%d != %d", args.length, 2);
-			assert (args[0].equals("hello")) : String.format("%s != %s", args[0], "hello");
-			assert (args[1].equals("world")) : String.format("%s != %s", args[0], "world");
+			assertThat(args, is(new String[] { "hello", "world" }));
 		}
 	}
 
