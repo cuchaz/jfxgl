@@ -69,6 +69,10 @@ public class Build extends JkJavaBuild {
 			.on("org.ow2.asm:asm:5.2")
 			.on(lwjgl("3.1.1", "glfw", "jemalloc", "opengl"))
 			
+			// test libs
+			.on("junit:junit:4.12").scope(TEST)
+			.on("org.hamcrest:hamcrest-all:1.3").scope(TEST)
+			
 			.build();
 	}
 	
@@ -103,6 +107,11 @@ public class Build extends JkJavaBuild {
 	@Override
 	public JkFileTreeSet editedResources() {
 		return JkFileTreeSet.of(file("resources"));
+	}
+	
+	@Override
+	public JkFileTreeSet unitTestEditedSources() {
+		return JkFileTreeSet.of(file("test"));
 	}
 	
 	@Override
