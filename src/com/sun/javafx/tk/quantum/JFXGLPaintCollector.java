@@ -7,7 +7,7 @@
  * 
  * See LICENSE.txt in the project root folder for the full license.
  *************************************************************************/
-package cuchaz.jfxgl.toolkit;
+package com.sun.javafx.tk.quantum;
 
 import com.sun.javafx.tk.quantum.PaintCollector;
 

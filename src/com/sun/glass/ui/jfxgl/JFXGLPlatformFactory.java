@@ -7,7 +7,7 @@
  * 
  * See LICENSE.txt in the project root folder for the full license.
  *************************************************************************/
-package cuchaz.jfxgl.glass;
+package com.sun.glass.ui.jfxgl;
 
 import com.sun.glass.ui.Application;
 import com.sun.glass.ui.Clipboard;
@@ -23,7 +23,8 @@ import com.sun.glass.ui.delegate.MenuItemDelegate;
 public class JFXGLPlatformFactory extends PlatformFactory {
 	
 	public static void install() {
-		PlatformFactory.instance = new JFXGLPlatformFactory();
+		System.setProperty("glass.platform", "JFXGL");
+		PlatformFactory.getPlatformFactory();
 	}
 
 	@Override

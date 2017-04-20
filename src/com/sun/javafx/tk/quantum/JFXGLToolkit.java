@@ -7,7 +7,7 @@
  * 
  * See LICENSE.txt in the project root folder for the full license.
  *************************************************************************/
-package cuchaz.jfxgl.toolkit;
+package com.sun.javafx.tk.quantum;
 
 import java.security.AccessControlContext;
 import java.util.Map;
@@ -38,9 +38,15 @@ import javafx.stage.Window;
 public class JFXGLToolkit extends QuantumToolkit {
 	
 	public static void install() {
-		JFXGLToolkit tk = new JFXGLToolkit();
-		tk.init();
-		Toolkit.TOOLKIT = tk;
+		
+		// make sure JavaFX is using the OpenGL prism backend
+		System.setProperty("prism.order", "es2");
+		
+		// DEBUG: turn on prism logging so we can see pipeline create/init errors
+		//System.setProperty("prism.verbose", "true");
+
+		System.setProperty("javafx.toolkit", JFXGLToolkit.class.getName());
+		Toolkit.getToolkit();
 	}
 	
 	private ES2Pipeline pipeline;
@@ -59,7 +65,7 @@ public class JFXGLToolkit extends QuantumToolkit {
 		if (maybeAnyPipeline == null) {
 			throw new RuntimeException("JavaFX render init failed to create a graphics pipeline");
 		} else if (!(maybeAnyPipeline instanceof ES2Pipeline)) {
-			throw new RuntimeException("JavaFX render init failed to create the OpenGL graphics pipeline");
+			throw new RuntimeException("JavaFX render init failed to create the OpenGL graphics pipeline, instead we got a " + maybeAnyPipeline.getClass().getName());
 		}
 		pipeline = (ES2Pipeline)maybeAnyPipeline;
 
@@ -200,7 +206,7 @@ public class JFXGLToolkit extends QuantumToolkit {
 		app.terminate();
 		
 		// clear the fx user thread in the toolkit
-		fxUserThread = null;
+		setFxUserThread(null);
 	}
 
 	public void disposePipeline() {

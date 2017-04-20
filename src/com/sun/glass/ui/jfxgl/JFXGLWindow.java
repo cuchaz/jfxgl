@@ -7,7 +7,7 @@
  * 
  * See LICENSE.txt in the project root folder for the full license.
  *************************************************************************/
-package cuchaz.jfxgl.glass;
+package com.sun.glass.ui.jfxgl;
 
 import java.nio.IntBuffer;
 
@@ -23,15 +23,15 @@ import com.sun.glass.ui.Screen;
 import com.sun.glass.ui.View;
 import com.sun.glass.ui.Window;
 import com.sun.javafx.application.PlatformImpl;
+import com.sun.prism.es2.JFXGLContext;
+import com.sun.prism.es2.JFXGLContexts;
+import com.sun.prism.es2.OffscreenBuffer;
 
 import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
 import cuchaz.jfxgl.GLState;
 import cuchaz.jfxgl.InAppGLContext;
 import cuchaz.jfxgl.InJavaFXGLContext;
-import cuchaz.jfxgl.prism.JFXGLContext;
-import cuchaz.jfxgl.prism.JFXGLContexts;
-import cuchaz.jfxgl.prism.OffscreenBuffer;
 
 public class JFXGLWindow extends Window {
 	

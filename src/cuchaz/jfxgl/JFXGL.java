@@ -21,17 +21,17 @@ import org.lwjgl.glfw.GLFWScrollCallbackI;
 import org.lwjgl.glfw.GLFWWindowFocusCallbackI;
 import org.lwjgl.opengl.GL11;
 
+import com.sun.glass.ui.jfxgl.JFXGLPlatformFactory;
+import com.sun.glass.ui.jfxgl.JFXGLView;
+import com.sun.glass.ui.jfxgl.JFXGLWindow;
 import com.sun.javafx.application.ParametersImpl;
 import com.sun.javafx.application.PlatformImpl;
 import com.sun.javafx.tk.Toolkit;
+import com.sun.javafx.tk.quantum.JFXGLToolkit;
+import com.sun.prism.es2.JFXGLContext;
+import com.sun.prism.es2.JFXGLContexts;
+import com.sun.prism.es2.JFXGLFactory;
 
-import cuchaz.jfxgl.glass.JFXGLPlatformFactory;
-import cuchaz.jfxgl.glass.JFXGLView;
-import cuchaz.jfxgl.glass.JFXGLWindow;
-import cuchaz.jfxgl.prism.JFXGLContext;
-import cuchaz.jfxgl.prism.JFXGLContexts;
-import cuchaz.jfxgl.prism.JFXGLFactory;
-import cuchaz.jfxgl.toolkit.JFXGLToolkit;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
@@ -69,12 +69,6 @@ public class JFXGL {
 	@SuppressWarnings("deprecation")
 	public static JFXGLContext start(long hwnd, String[] args, Application app) {
 		
-		// make sure JavaFX is using the OpenGL prism backend
-		System.setProperty("prism.order", "es2");
-		
-		// DEBUG: turn on prism logging so we can see pipeline create/init errors
-		//System.setProperty("prism.verbose", "true");
-		
 		// init the app OpenGL contexts
 		JFXGLContexts.app = JFXGLContext.wrapExisting(hwnd);
 		
@@ -89,9 +83,9 @@ public class JFXGL {
 		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		
 		// install our various pieces into JavaFX
-		JFXGLFactory.install();
 		JFXGLPlatformFactory.install();
 		JFXGLToolkit.install();
+		JFXGLFactory.install();
 		
 		try {
 			

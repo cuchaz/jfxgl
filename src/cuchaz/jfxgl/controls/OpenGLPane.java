@@ -20,14 +20,14 @@ import com.sun.javafx.tk.RenderJob;
 import com.sun.javafx.tk.TKPulseListener;
 import com.sun.javafx.tk.Toolkit;
 import com.sun.prism.Graphics;
+import com.sun.prism.es2.JFXGLContext;
+import com.sun.prism.es2.JFXGLContexts;
+import com.sun.prism.es2.OffscreenBuffer;
 
 import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
 import cuchaz.jfxgl.GLState;
 import cuchaz.jfxgl.InJavaFXGLContext;
-import cuchaz.jfxgl.prism.JFXGLContext;
-import cuchaz.jfxgl.prism.JFXGLContexts;
-import cuchaz.jfxgl.prism.OffscreenBuffer;
 import javafx.animation.AnimationTimer;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.StackPane;

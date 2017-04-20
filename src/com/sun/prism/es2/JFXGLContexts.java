@@ -1,4 +1,4 @@
-package cuchaz.jfxgl.prism;
+package com.sun.prism.es2;
 
 import java.util.HashMap;
 import java.util.Map;

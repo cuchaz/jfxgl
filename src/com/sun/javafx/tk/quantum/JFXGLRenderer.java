@@ -7,17 +7,16 @@
  * 
  * See LICENSE.txt in the project root folder for the full license.
  *************************************************************************/
-package cuchaz.jfxgl.toolkit;
+package com.sun.javafx.tk.quantum;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
+import com.sun.glass.ui.jfxgl.JFXGLWindow;
 import com.sun.javafx.tk.RenderJob;
 import com.sun.javafx.tk.quantum.QuantumRenderer;
-
-import cuchaz.jfxgl.glass.JFXGLWindow;
-import cuchaz.jfxgl.prism.JFXGLContexts;
+import com.sun.prism.es2.JFXGLContexts;
 
 public class JFXGLRenderer extends QuantumRenderer {
 	

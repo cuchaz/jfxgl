@@ -18,25 +18,32 @@ import org.junit.Test;
 public class TestJFXGLLauncher {
 	
 	public static class LaunchableCheckClassloader {
-		public static void launch(String[] args) {
-			// NOTE: compare the class names, since the class isntances will be from different classloaders
+		public static void jfxglmain(String[] args) {
+			// NOTE: compare the class names, since the class instances will be from different classloaders
 			assertThat(LaunchableCheckArgs.class.getClassLoader().getClass().getName(), is(JFXGLLauncher.Loader.class.getName()));
 		}
 	}
 	
 	@Test
-	public void classloader() {
-		JFXGLLauncher.launch(LaunchableCheckClassloader.class, null);
+	public void main() {
+		JFXGLLauncher.launchMain(LaunchableCheckClassloader.class, null);
 	}
 	
 	public static class LaunchableCheckArgs {
-		public static void launch(String[] args) {
+		public static void jfxglmain(String[] args) {
 			assertThat(args, is(new String[] { "hello", "world" }));
 		}
 	}
 
 	@Test
-	public void args() {
-		JFXGLLauncher.launch(LaunchableCheckArgs.class, new String[] { "hello", "world" });
+	public void mainArgs() {
+		JFXGLLauncher.launchMain(LaunchableCheckArgs.class, new String[] { "hello", "world" });
+	}
+	
+	@Test
+	public void launchable() {
+		JFXGLLauncher.launchLambda(() -> {
+			assertThat(getClass().getClassLoader().getClass().getName(), is(JFXGLLauncher.Loader.class.getName()));
+		});
 	}
 }

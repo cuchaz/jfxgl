@@ -7,7 +7,7 @@
  * 
  * See LICENSE.txt in the project root folder for the full license.
  *************************************************************************/
-package cuchaz.jfxgl.glass;
+package com.sun.glass.ui.jfxgl;
 
 import java.util.HashMap;
 import java.util.Map;

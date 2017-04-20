@@ -10,12 +10,15 @@
 package cuchaz.jfxgl;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import sun.reflect.ConstantPool;
 
 public class JFXGLLauncher {
 	
@@ -83,14 +86,62 @@ public class JFXGLLauncher {
 		}
 	}
 	
-	public static void launch(Class<?> type, String[] args) {
+	public static void launchMain(Class<?> type, String[] args) {
 		try (Loader loader = new Loader()) {
 			Class<?> loadedType = loader.loadClass(type.getName());
 			assert (loadedType.getClassLoader() == loader);
-			loadedType.getMethod("launch", new Class<?>[] { String[].class })
+			loadedType.getMethod("jfxglmain", new Class<?>[] { String[].class })
 				.invoke(null, new Object[] { args });
 		} catch (Exception ex) {
 			throw new RuntimeException("Can't launch class: " + type.getName(), ex);
 		}
+	}
+	
+	public static interface Launchable {
+		void launch();
+	}
+	
+	public static void launchLambda(Launchable launchable) {
+		
+		// parse the lambda info
+		String lambdaName = launchable.getClass().getName();
+		String outerClassName = lambdaName.replaceFirst("\\$\\$Lambda.*", "");
+		
+		// lambda instances are dynamically-generated classes at runtime
+		// to get the static method it calls, we have to read the class data directly
+		String methodName = null;
+		try {
+			Method getConstantPool = Class.class.getDeclaredMethod("getConstantPool");
+			getConstantPool.setAccessible(true);
+			ConstantPool constantPool = (ConstantPool) getConstantPool.invoke(launchable.getClass());
+			for (int i=0; i<constantPool.getSize(); i++) {
+				try {
+					String[] methodRefInfo = constantPool.getMemberRefInfoAt(i);
+					if (methodRefInfo[0].equals(outerClassName.replaceAll("\\.", "/")) && methodRefInfo[1].startsWith("lambda$")) {
+						methodName = methodRefInfo[1];
+						break;
+					}
+				} catch (IllegalArgumentException ex) {
+					// not a method ref
+				}
+			}
+		} catch (Exception ex) {
+			throw new Error(ex);
+		}
+		
+		if (methodName == null) {
+			throw new Error("can't launch lambda, can't find method to call");
+		}
+		
+		try (Loader loader = new Loader()) {
+			Class<?> loadedType = loader.loadClass(outerClassName);
+			assert (loadedType.getClassLoader() == loader);
+			Object loadedInstance = loadedType.newInstance();
+			Method method = loadedType.getDeclaredMethod(methodName, new Class<?>[] {});
+			method.setAccessible(true);
+			method.invoke(loadedInstance, new Object[] {});
+		} catch (Exception ex) {
+			throw new RuntimeException("Can't launch lambda: " + launchable.getClass().getName(), ex);
+		}		
 	}
 }

@@ -7,7 +7,7 @@
  * 
  * See LICENSE.txt in the project root folder for the full license.
  *************************************************************************/
-package cuchaz.jfxgl.glass;
+package com.sun.glass.ui.jfxgl;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -21,6 +21,7 @@ import com.sun.glass.ui.Application;
 import com.sun.glass.ui.CommonDialogs.ExtensionFilter;
 import com.sun.glass.ui.CommonDialogs.FileChooserResult;
 import com.sun.glass.ui.Cursor;
+import com.sun.glass.ui.JFXGLScreen;
 import com.sun.glass.ui.Pixels;
 import com.sun.glass.ui.Robot;
 import com.sun.glass.ui.Screen;

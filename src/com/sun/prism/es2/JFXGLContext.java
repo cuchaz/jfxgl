@@ -7,7 +7,7 @@
  * 
  * See LICENSE.txt in the project root folder for the full license.
  *************************************************************************/
-package cuchaz.jfxgl.prism;
+package com.sun.prism.es2;
 
 import java.io.IOException;
 import java.io.InputStream;
