@@ -66,7 +66,8 @@ public class JFXGLApplication extends Application {
 	private static Runnable waitingFor;
 
 	private LinkedList<Event> eventList;
-	private boolean isRunning;
+	
+	private volatile boolean isRunning;
 	
 	public JFXGLApplication() {
 		eventList = new LinkedList<Event>();
@@ -116,6 +117,7 @@ public class JFXGLApplication extends Application {
 	
 	@Override
 	protected void _invokeAndWait(Runnable runnable) {
+		checkEventThreadRunning();
 		synchronized (invokeAndWaitLock) {
 			waitingFor = runnable;
 		}
@@ -135,9 +137,20 @@ public class JFXGLApplication extends Application {
 
 	@Override
 	protected void _invokeLater(Runnable runnable) {
+		checkEventThreadRunning();
 		synchronized (eventList) {
 			eventList.addLast(new RunnableEvent(false, runnable));
 			eventList.notify();
+		}
+	}
+	
+	public static class EventThreadNotRunningException extends RuntimeException {
+		private static final long serialVersionUID = -185153724571788074L;
+	}
+	
+	private void checkEventThreadRunning() {
+		if (!isRunning) {
+			throw new EventThreadNotRunningException();
 		}
 	}
 

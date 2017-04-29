@@ -10,6 +10,7 @@
 package cuchaz.jfxgl;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -22,9 +23,13 @@ import sun.reflect.ConstantPool;
 
 public class JFXGLLauncher {
 	
+	// TEMP: for debug mode
 	private static final File OpenJFXDir = new File("../openjfx");
 	private static final List<File> BinDirs = Arrays.asList(
-		new File(OpenJFXDir, "modules/graphics/bin")
+		new File(OpenJFXDir, "modules/base/bin"),
+		new File(OpenJFXDir, "modules/controls/bin"),
+		new File(OpenJFXDir, "modules/graphics/bin"),
+		new File(OpenJFXDir, "modules/fxml/bin")
 	);
 	
 	protected static class Loader extends URLClassLoader {
@@ -88,11 +93,24 @@ public class JFXGLLauncher {
 	
 	public static void launchMain(Class<?> type, String[] args) {
 		try (Loader loader = new Loader()) {
+			
+			// take over the thread loader, so spawned threads will inherit it
+			Thread.currentThread().setContextClassLoader(loader);
+			
+			// call jfxglmain()
 			Class<?> loadedType = loader.loadClass(type.getName());
 			assert (loadedType.getClassLoader() == loader);
 			loadedType.getMethod("jfxglmain", new Class<?>[] { String[].class })
 				.invoke(null, new Object[] { args });
+			
+		} catch (InvocationTargetException ex) {
+			
+			// application error, show the message as simply as possible
+			ex.getCause().printStackTrace();
+			
 		} catch (Exception ex) {
+			
+			// launch error, show all the debug info
 			throw new RuntimeException("Can't launch class: " + type.getName(), ex);
 		}
 	}

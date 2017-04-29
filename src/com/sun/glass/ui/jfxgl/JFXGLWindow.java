@@ -22,7 +22,7 @@ import com.sun.glass.ui.Pixels;
 import com.sun.glass.ui.Screen;
 import com.sun.glass.ui.View;
 import com.sun.glass.ui.Window;
-import com.sun.javafx.application.PlatformImpl;
+import com.sun.javafx.tk.quantum.JFXGLToolkit;
 import com.sun.prism.es2.JFXGLContext;
 import com.sun.prism.es2.JFXGLContexts;
 import com.sun.prism.es2.OffscreenBuffer;
@@ -77,7 +77,7 @@ public class JFXGLWindow extends Window {
 			}
 			
 			// NOTE: GLFW events called on main thread, so relay to events thread
-			PlatformImpl.runLater(() -> {
+			JFXGLToolkit.runLater(() -> {
 				notifyResize(WindowEvent.RESIZE, width, height);
 				if (view != null) {
 					view.notifyResize(this.width, this.height);
@@ -144,7 +144,7 @@ public class JFXGLWindow extends Window {
 			
 			// if we notify resize now, JavaFX just ignores it
 			// so put it on the event queue
-			PlatformImpl.runLater(() -> {
+			JFXGLToolkit.runLater(() -> {
 				notifyResize(WindowEvent.RESIZE, width, height);
 				this.view.notifyResize(width, height);
 			});
@@ -306,7 +306,9 @@ public class JFXGLWindow extends Window {
 	
 	@Override
 	protected boolean _requestFocus(long hwnd, int event) {
-		GLFW.glfwFocusWindow(hwnd);
+		// TODO: this hangs on windows, but not linux for some reason
+		// we're only going to have one window anyway, so just ignore focus requests
+		//GLFW.glfwFocusWindow(hwnd);
 		return true;
 	}
 

@@ -26,8 +26,13 @@ public class JFXGLFactory extends GLFactory {
 	}
 	
 	public static void install() {
+		
 		drawable = new JFXGLDrawable(JFXGLContexts.app.hwnd);
 		GLFactory.platformFactory = new JFXGLFactory();
+		
+		if (ES2Pipeline.glFactory.getClass() != JFXGLFactory.class) {
+			throw new Error(JFXGLFactory.class.getSimpleName() + " not installed, got a " + ES2Pipeline.glFactory.getClass().getName() + " instead.");
+		}
 	}
 	
 	@Override

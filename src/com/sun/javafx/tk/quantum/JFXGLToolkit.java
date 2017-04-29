@@ -23,8 +23,6 @@ import com.sun.javafx.tk.AppletWindow;
 import com.sun.javafx.tk.RenderJob;
 import com.sun.javafx.tk.TKStage;
 import com.sun.javafx.tk.Toolkit;
-import com.sun.javafx.tk.quantum.QuantumToolkit;
-import com.sun.javafx.tk.quantum.ViewScene;
 import com.sun.prism.GraphicsPipeline;
 import com.sun.prism.es2.ES2Pipeline;
 import com.sun.prism.impl.PrismSettings;
@@ -38,13 +36,6 @@ import javafx.stage.Window;
 public class JFXGLToolkit extends QuantumToolkit {
 	
 	public static void install() {
-		
-		// make sure JavaFX is using the OpenGL prism backend
-		System.setProperty("prism.order", "es2");
-		
-		// DEBUG: turn on prism logging so we can see pipeline create/init errors
-		//System.setProperty("prism.verbose", "true");
-
 		System.setProperty("javafx.toolkit", JFXGLToolkit.class.getName());
 		Toolkit.getToolkit();
 	}
@@ -206,7 +197,7 @@ public class JFXGLToolkit extends QuantumToolkit {
 		app.terminate();
 		
 		// clear the fx user thread in the toolkit
-		setFxUserThread(null);
+		clearFxUserThread();
 	}
 
 	public void disposePipeline() {
@@ -217,7 +208,15 @@ public class JFXGLToolkit extends QuantumToolkit {
 	
 	@Override
 	public void defer(Runnable r) {
+		runLater(r);
+	}
+	
+	public static void runLater(Runnable r) {
 		Application.invokeLater(r);
+	}
+	
+	public static void runAndWait(Runnable r) {
+		Application.invokeAndWait(r);
 	}
 	
 	@Override

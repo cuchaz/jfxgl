@@ -10,6 +10,7 @@
 package cuchaz.jfxgl;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.lwjgl.glfw.GLFW;
@@ -21,6 +22,7 @@ import org.lwjgl.glfw.GLFWScrollCallbackI;
 import org.lwjgl.glfw.GLFWWindowFocusCallbackI;
 import org.lwjgl.opengl.GL11;
 
+import com.sun.glass.ui.jfxgl.JFXGLApplication;
 import com.sun.glass.ui.jfxgl.JFXGLPlatformFactory;
 import com.sun.glass.ui.jfxgl.JFXGLView;
 import com.sun.glass.ui.jfxgl.JFXGLWindow;
@@ -82,10 +84,16 @@ public class JFXGL {
 		GL11.glEnable(GL11.GL_BLEND);
 		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		
+		// make sure JavaFX is using the OpenGL prism backend
+		System.setProperty("prism.order", "es2");
+		
+		// DEBUG: turn on prism logging so we can see pipeline create/init errors
+		//System.setProperty("prism.verbose", "true");
+		
 		// install our various pieces into JavaFX
 		JFXGLPlatformFactory.install();
-		JFXGLToolkit.install();
 		JFXGLFactory.install();
+		JFXGLToolkit.install();
 		
 		try {
 			
@@ -119,7 +127,7 @@ public class JFXGL {
 		
 		// call app start (on the FX thread)
 		runOnEventsThreadAndWait(() -> {
-			
+
 			// make the sage
 			Stage primaryStage = new Stage();
 			primaryStage.impl_setPrimary(true);
@@ -232,15 +240,11 @@ public class JFXGL {
 		return JFXGLContexts.app;
 	}
 	
-	public static void runOnEventsThread(Runnable runnable) {
-		PlatformImpl.runLater(runnable);
-	}
-	
-	public static void runOnEventsThreadAndWait(CheckedRunnable runnable) {
+	public static void runOnEventsThread(CheckedRunnable runnable) {
 		
 		AtomicReference<Throwable> eventsException = new AtomicReference<>(null);
 		
-		PlatformImpl.runAndWait(() -> {
+		JFXGLToolkit.runLater(() -> {
 			try {
 				runnable.run();
 			} catch (Throwable t) {
@@ -252,6 +256,53 @@ public class JFXGL {
 		if (t != null) {
 			throw new RuntimeException(t);
 		}
+	}
+	
+	public static void runOnEventsThreadAndWait(CheckedRunnable runnable) {
+		
+		AtomicReference<Throwable> eventsException = new AtomicReference<>(null);
+		
+		JFXGLToolkit.runAndWait(() -> {
+			try {
+				runnable.run();
+			} catch (Throwable t) {
+				eventsException.set(t);
+			}
+		});
+		
+		Throwable t = eventsException.get();
+		if (t != null) {
+			throw new RuntimeException(t);
+		}
+	}
+	
+	public static boolean runOnEventsThreadAndWait(CheckedRunnable runnable, int timeout, TimeUnit timeUnit) {
+		
+		AtomicReference<Throwable> eventsException = new AtomicReference<>(null);
+		CountDownLatch countdown = new CountDownLatch(1);
+
+		JFXGLToolkit.runLater(() -> {
+			try {
+				runnable.run();
+				countdown.countDown();
+			} catch (Throwable t) {
+				eventsException.set(t);
+			}
+		});
+		
+		boolean isFinished;
+		try {
+			isFinished = countdown.await(3, TimeUnit.SECONDS);
+		} catch (InterruptedException ex) {
+			throw new RuntimeException(ex);
+		}
+		
+		Throwable t = eventsException.get();
+		if (t != null) {
+			throw new RuntimeException(t);
+		}
+		
+		return isFinished;
 	}
 	
 	/**
@@ -270,9 +321,21 @@ public class JFXGL {
 
 	public static void terminate() {
 		
+		// is the events thread still working?
+		boolean canRunEvents;
+		try {
+			canRunEvents = runOnEventsThreadAndWait(() -> {}, 5, TimeUnit.SECONDS);
+		} catch (JFXGLApplication.EventThreadNotRunningException ex) {
+			canRunEvents = false;
+		}
+		
+		if (!canRunEvents) {
+			System.out.println("WARNING: JavaFX events thread not responding in a timely manner. Some event must have jammed it.");
+		}
+		
 		try {
 			
-			if (app != null) {
+			if (app != null && canRunEvents) {
 				
 				// call app stop (on the FX thread)
 				runOnEventsThreadAndWait(() -> {
@@ -284,7 +347,9 @@ public class JFXGL {
 			
 			// platform cleanup
 			PlatformImpl.removeListener(finishListener);
-			PlatformImpl.tkExit();
+			if (canRunEvents) {
+				PlatformImpl.tkExit();
+			}
 			if (toolkit != null) {
 				toolkit.disposePipeline();
 			}
