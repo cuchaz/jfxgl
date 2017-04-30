@@ -23,8 +23,13 @@ import com.sun.glass.ui.delegate.MenuItemDelegate;
 public class JFXGLPlatformFactory extends PlatformFactory {
 	
 	public static void install() {
+		
 		System.setProperty("glass.platform", "JFXGL");
-		PlatformFactory.getPlatformFactory();
+		
+		PlatformFactory pf = PlatformFactory.getPlatformFactory();
+		if (pf.getClass() != JFXGLPlatformFactory.class) {
+			throw new Error(JFXGLPlatformFactory.class.getSimpleName() + " not installed correctly");
+		}
 	}
 
 	@Override

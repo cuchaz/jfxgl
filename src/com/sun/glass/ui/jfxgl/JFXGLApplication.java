@@ -30,6 +30,8 @@ import com.sun.glass.ui.Timer;
 import com.sun.glass.ui.View;
 import com.sun.glass.ui.Window;
 
+import cuchaz.jfxgl.EventsThreadNotRunningException;
+
 public class JFXGLApplication extends Application {
 
 	private static abstract class Event {
@@ -144,13 +146,9 @@ public class JFXGLApplication extends Application {
 		}
 	}
 	
-	public static class EventThreadNotRunningException extends RuntimeException {
-		private static final long serialVersionUID = -185153724571788074L;
-	}
-	
 	private void checkEventThreadRunning() {
 		if (!isRunning) {
-			throw new EventThreadNotRunningException();
+			throw new EventsThreadNotRunningException();
 		}
 	}
 

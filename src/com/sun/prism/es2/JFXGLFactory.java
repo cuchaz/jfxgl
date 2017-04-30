@@ -30,8 +30,10 @@ public class JFXGLFactory extends GLFactory {
 		drawable = new JFXGLDrawable(JFXGLContexts.app.hwnd);
 		GLFactory.platformFactory = new JFXGLFactory();
 		
-		if (ES2Pipeline.glFactory.getClass() != JFXGLFactory.class) {
-			throw new Error(JFXGLFactory.class.getSimpleName() + " not installed, got a " + ES2Pipeline.glFactory.getClass().getName() + " instead.");
+		if (ES2Pipeline.glFactory == null) {
+			throw new Error(JFXGLFactory.class.getSimpleName() + " not created");
+		} else if (ES2Pipeline.glFactory.getClass() != JFXGLFactory.class) {
+			throw new Error(JFXGLFactory.class.getSimpleName() + " not created, got a " + ES2Pipeline.glFactory.getClass().getName() + " instead.");
 		}
 	}
 	

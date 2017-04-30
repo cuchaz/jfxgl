@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.glass.ui.Application;
 import com.sun.glass.ui.Screen;
+import com.sun.glass.ui.jfxgl.JFXGLApplication;
 import com.sun.javafx.application.PlatformImpl;
 import com.sun.javafx.embed.HostInterface;
 import com.sun.javafx.tk.AppletWindow;
@@ -28,6 +29,7 @@ import com.sun.prism.es2.ES2Pipeline;
 import com.sun.prism.impl.PrismSettings;
 import com.sun.scenario.DelayedRunnable;
 
+import cuchaz.jfxgl.EventsThreadNotRunningException;
 import cuchaz.jfxgl.InJavaFXGLContext;
 import javafx.scene.Scene;
 import javafx.stage.StageStyle;
@@ -36,8 +38,15 @@ import javafx.stage.Window;
 public class JFXGLToolkit extends QuantumToolkit {
 	
 	public static void install() {
+		
 		System.setProperty("javafx.toolkit", JFXGLToolkit.class.getName());
-		Toolkit.getToolkit();
+		
+		Toolkit tk = Toolkit.getToolkit();
+		if (tk == null) {
+			throw new Error(JFXGLToolkit.class.getSimpleName() + " not created");
+		} else if (tk.getClass() != JFXGLToolkit.class) {
+			throw new Error(JFXGLToolkit.class.getSimpleName() + " not create correctly, got a " + tk.getClass().getName() + " instead.");
+		}
 	}
 	
 	private ES2Pipeline pipeline;
@@ -212,11 +221,19 @@ public class JFXGLToolkit extends QuantumToolkit {
 	}
 	
 	public static void runLater(Runnable r) {
+		checkApplication();
 		Application.invokeLater(r);
 	}
 	
 	public static void runAndWait(Runnable r) {
+		checkApplication();
 		Application.invokeAndWait(r);
+	}
+	
+	private static void checkApplication() {
+		if (Application.GetApplication() == null) {
+			throw new EventsThreadNotRunningException();
+		}
 	}
 	
 	@Override

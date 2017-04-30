@@ -22,7 +22,6 @@ import org.lwjgl.glfw.GLFWScrollCallbackI;
 import org.lwjgl.glfw.GLFWWindowFocusCallbackI;
 import org.lwjgl.opengl.GL11;
 
-import com.sun.glass.ui.jfxgl.JFXGLApplication;
 import com.sun.glass.ui.jfxgl.JFXGLPlatformFactory;
 import com.sun.glass.ui.jfxgl.JFXGLView;
 import com.sun.glass.ui.jfxgl.JFXGLWindow;
@@ -325,7 +324,7 @@ public class JFXGL {
 		boolean canRunEvents;
 		try {
 			canRunEvents = runOnEventsThreadAndWait(() -> {}, 5, TimeUnit.SECONDS);
-		} catch (JFXGLApplication.EventThreadNotRunningException ex) {
+		} catch (EventsThreadNotRunningException ex) {
 			canRunEvents = false;
 		}
 		
