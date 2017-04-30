@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.glass.ui.Application;
 import com.sun.glass.ui.Screen;
-import com.sun.glass.ui.jfxgl.JFXGLApplication;
 import com.sun.javafx.application.PlatformImpl;
 import com.sun.javafx.embed.HostInterface;
 import com.sun.javafx.tk.AppletWindow;
