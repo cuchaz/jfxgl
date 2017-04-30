@@ -29,8 +29,11 @@ public class Build extends JkJavaBuild {
 		// tell the eclipse plugin to use the special JDK without JavaFX
 		// NOTE: you should create a JRE in the  eclipse workspace needs to have a JRE with this name!
 		JkBuildPluginEclipse eclipse = new JkBuildPluginEclipse();
-		eclipse.setStandardJREContainer("openjdk-8u121-noFX");
+		eclipse.setStandardJREContainer("openjdk-8u131-noFX");
 		plugins.configure(eclipse);
+		
+		// don't run the unit tests just to build
+		tests.skip = true;
 	}
 	
 	@Override
@@ -40,7 +43,7 @@ public class Build extends JkJavaBuild {
 	
 	@Override
 	public JkVersion version() {
-		return JkVersion.name("0.2");
+		return JkVersion.name("0.3");
 	}
 
 	@Override
@@ -52,7 +55,7 @@ public class Build extends JkJavaBuild {
 	public JkJavaCompiler productionCompiler() {
 		
 		// make sure we're using the special JDK without JavaFX in it
-		return super.productionCompiler().forkOnCompiler("../openjdk-8u121-noFX/bin/javac");
+		return super.productionCompiler().forkOnCompiler("../openjdk-8u131-noFX/bin/javac");
 	}
 	
 	@Override
@@ -71,7 +74,6 @@ public class Build extends JkJavaBuild {
 			.on(new File("../openjfx/modules/base/bin")).scope(PROVIDED)
 			
 			// 3rd-party libs
-			.on("org.ow2.asm:asm:5.2")
 			.on(lwjgl("3.1.1", "glfw", "jemalloc", "opengl"))
 			
 			.build();
