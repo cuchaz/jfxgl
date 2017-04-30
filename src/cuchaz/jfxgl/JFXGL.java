@@ -38,12 +38,6 @@ import javafx.stage.Stage;
 
 public class JFXGL {
 	
-	static {
-		// need to run tweakers as soon as possible
-		// so we get there before the classes are naturally loaded
-		JFXGLTweaker.tweak();
-	}
-
 	public static interface CheckedRunnable {
 		void run() throws Exception;
 	}

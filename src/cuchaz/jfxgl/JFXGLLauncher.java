@@ -9,28 +9,13 @@
  *************************************************************************/
 package cuchaz.jfxgl;
 
-import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import sun.reflect.ConstantPool;
 
 public class JFXGLLauncher {
-	
-	// TEMP: for debug mode
-	private static final File OpenJFXDir = new File("../openjfx");
-	private static final List<File> BinDirs = Arrays.asList(
-		new File(OpenJFXDir, "modules/base/bin"),
-		new File(OpenJFXDir, "modules/controls/bin"),
-		new File(OpenJFXDir, "modules/graphics/bin"),
-		new File(OpenJFXDir, "modules/fxml/bin")
-	);
 	
 	protected static class Loader extends URLClassLoader {
 		
@@ -43,22 +28,7 @@ public class JFXGLLauncher {
 		}
 		
 		public Loader() {
-			super(makeURLs());
-		}
-		
-		private static URL[] makeURLs() {
-			// TODO: point to built openjfx jar?
-			try {
-				List<URL> urls = new ArrayList<>();
-				for (File binDir : BinDirs) {
-					urls.add(binDir.toURI().toURL());
-				}
-				urls.addAll(Arrays.asList(((URLClassLoader)getParentLoader()).getURLs()));
-				URL[] array = new URL[urls.size()];
-				return urls.toArray(array);
-			} catch (MalformedURLException ex) {
-				throw new RuntimeException(ex);
-			}
+			super(((URLClassLoader)getParentLoader()).getURLs());
 		}
 		
 		@Override
