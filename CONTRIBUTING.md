@@ -33,6 +33,7 @@ can [set up the dev environment manually](CONTRIBUTING-hard.md).
 If you modified OpenJFX and need to update the patch JFXGL uses, this handy command will do it.
 ```
 $ cd jfxgl/openjfx
-$ hg diff -g > ../jfxgl/openjfx.8u121.patch
+$ hg diff -g > ../jfxgl/openjfx.patch
 ```
-Don't forget to update the `cuchaz.jfxgl.JFXGLTweaker` class with your changes too, so they get applied at runtime.
+If the patch file contains any changes from Eclipse metadata (like the `.classpath` file),
+you may want to remove them from the patch file.
