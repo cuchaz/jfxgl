@@ -11,19 +11,11 @@ This whole process is another giant hack, but it mostly works.
 
 [openjfx]: http://wiki.openjdk.java.net/display/OpenJFX/Main
 
-Currently there are two ways to do this:
 
-## 1. The happy path
+## Sorry, Mario, but your princess is in another castle
 
-[JFXGL-env](https://bitbucket.org/cuchaz/jfxgl-env) is a separate project that has build scripts to setup
-the development environment for JFXGL.
+Workspace setup is done by a script in a separate project, [JFXGL-env](https://bitbucket.org/cuchaz/jfxgl-env).
 See the [README](https://bitbucket.org/cuchaz/jfxgl-env) there for instructions.
-
-
-## 2. The hard way
-
-If for some reason the `JFXGL-env` build scripts don't work for you, and you have superhuman patience, you
-can [set up the dev environment manually](CONTRIBUTING-hard.md).
 
 
 # Miscellaneous

@@ -12,18 +12,28 @@ package cuchaz.jfxgl;
 import java.io.File;
 
 import org.jerkar.api.depmanagement.JkDependencies;
+import org.jerkar.api.depmanagement.JkMavenPublication;
+import org.jerkar.api.depmanagement.JkMavenPublicationInfo;
 import org.jerkar.api.depmanagement.JkModuleDependency;
 import org.jerkar.api.depmanagement.JkModuleId;
+import org.jerkar.api.depmanagement.JkPublishRepo;
+import org.jerkar.api.depmanagement.JkPublisher;
+import org.jerkar.api.depmanagement.JkRepo;
 import org.jerkar.api.depmanagement.JkScopedDependency;
 import org.jerkar.api.depmanagement.JkVersion;
+import org.jerkar.api.depmanagement.JkVersionedModule;
 import org.jerkar.api.file.JkFileTreeSet;
 import org.jerkar.api.file.JkPathFilter;
 import org.jerkar.api.java.JkJavaCompiler;
+import org.jerkar.tool.JkDoc;
 import org.jerkar.tool.builtins.eclipse.JkBuildPluginEclipse;
 import org.jerkar.tool.builtins.javabuild.JkJavaBuild;
 import org.jerkar.tool.builtins.javabuild.JkJavaPacker;
 
 public class Build extends JkJavaBuild {
+	
+	@JkDoc("path to local maven repo for publishing")
+	private File pathMavenRepo = new File("maven");
 	
 	public Build() {
 		// tell the eclipse plugin to use the special JDK without JavaFX
@@ -133,5 +143,64 @@ public class Build extends JkJavaBuild {
 			.andFilter(JkPathFilter.include("cuchaz/jfxgl/controls/**/*.*"))
 			.zip()
 			.to(ouputDir().file("jfxgl-controls.jar"));
+	}
+	
+	/**
+	 * Unless you're me, you probably don't want to run this =P
+	 * 
+	 * Also, don't forget to compile your jfxrt.jar first
+	 */
+	public void doMaven() {
+		
+		doPack();
+		
+		// publish to the local maven repo
+		JkPublishRepo repo = JkRepo.maven(pathMavenRepo).asPublishRepo();
+		
+		// publish jfxrt.jar
+		JkMavenPublicationInfo jfxrtInfo = ownInfo(JkMavenPublicationInfo.of(
+			"JavaFX for JFXGL",
+			"Cross-platform version of OpenJFX that works with JFXGL",
+			"https://bitbucket.org/cuchaz/jfxgl"
+		));
+		JkVersionedModule jfxrtMod = JkVersionedModule.of(
+			JkModuleId.of(moduleId().group(), moduleId().name() + "-jfxrt"),
+			version()
+		); 
+		JkPublisher.of(repo).publishMaven(
+			jfxrtMod,
+			JkMavenPublication.of(file("../openjfx/build/sdk/rt/lib/ext/jfxrt.jar"))
+				.with(jfxrtInfo),
+			JkDependencies.of()
+		);
+		
+		// publish the JFXGL jar
+		JkMavenPublicationInfo jfxglInfo = ownInfo(JkMavenPublicationInfo.of(
+			"JFXGL",
+			"Glue code that allows you to use JavaFX in your OpenGL/LWJGL3 app.",
+			"https://bitbucket.org/cuchaz/jfxgl"
+		));
+		JkJavaPacker packer = packer();
+		JkPublisher.of(repo).publishMaven(
+			versionedModule(),
+			JkMavenPublication.of(packer.jarFile())
+				.with(jfxglInfo)
+				.and(packer.jarSourceFile(), "sources"),
+			JkDependencies.of()
+		);
+	}
+	
+	public JkMavenPublicationInfo ownInfo(JkMavenPublicationInfo info) {
+		return info
+			.andLicense(
+				"GPL v2 with classpath exception",
+				"https://bitbucket.org/cuchaz/jfxgl/src/default/LICENSE.txt"
+			)
+			.andDeveloper(
+				"Jeff Martin (Cuchaz)",
+				"jeff@cuchazinteractive.com",
+				"Cuchaz Interactive",
+				"https://www.cuchazinteractive.com/"
+			);
 	}
 }

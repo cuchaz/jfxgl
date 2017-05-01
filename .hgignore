@@ -4,5 +4,6 @@ syntax: glob
 .classpath
 build/output
 build/libs
+build/boot/options.properties
 bin
 
