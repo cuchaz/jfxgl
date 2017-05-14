@@ -83,6 +83,11 @@ public class Main {
 
 ```
 
+**WARNING** For some people using IntelliJ, the JRE jars get prepended to the classpath. This confuses the crap
+out of JFXGL's classloader and you'll see bizzare exceptions like ` java.lang.SecurityException: Prohibited package name`.
+JRE jars should not be on the classpath under normal circumstances. To fix these errors in IntelliJ, remove the JRE jars
+from the classpath. `java` knows how to find them just fine without them being on the classpath.
+
 ### Hello World
 
 JFXGL is designed to work just like LWJGL3 and leave you complete control over your window and the render loop.
