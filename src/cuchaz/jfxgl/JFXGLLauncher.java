@@ -11,7 +11,10 @@ package cuchaz.jfxgl;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
+import java.util.List;
 
 import sun.reflect.ConstantPool;
 
@@ -27,8 +30,45 @@ public class JFXGLLauncher {
 			return getParentLoader().getParent();
 		}
 		
+		// for some reason I don't quite understand,
+		// IntelliJ IDEA prepends the JRE jars to the launch classpath
+		// of course, this completely messes up this classloader,
+		// so we will attempt to filter them out here
+		private static List<String> jreExcludedJars = Arrays.asList(
+			"/jre/lib/charsets.jar",
+			"/jre/lib/ext/cldrdata.jar",
+			"/jre/lib/ext/dnsns.jar",
+			"/jre/lib/ext/icedtea-sound.jar",
+			"/jre/lib/ext/jaccess.jar",
+			"/jre/lib/ext/jfxrt.jar",
+			"/jre/lib/ext/localedata.jar",
+			"/jre/lib/ext/nashorn.jar",
+			"/jre/lib/ext/sunec.jar",
+			"/jre/lib/ext/sunjce_provider.jar",
+			"/jre/lib/ext/sunpkcs11.jar",
+			"/jre/lib/ext/zipfs.jar",
+			"/jre/lib/jce.jar",
+			"/jre/lib/jfxswt.jar",
+			"/jre/lib/jsse.jar",
+			"/jre/lib/management-agent.jar",
+			"/jre/lib/resources.jar",
+			"/jre/lib/rt.jar"
+		);
+		private static URL[] filterUrls(URL[] urls) {
+			return (URL[])Arrays.stream(urls)
+				.filter((url) -> {
+					for (String jreExcludedJar : jreExcludedJars) {
+						if (url.getPath().endsWith(jreExcludedJar)) {
+							return false;
+						}
+					}
+					return true;
+				})
+				.toArray(URL[]::new);
+		}
+		
 		public Loader() {
-			super(((URLClassLoader)getParentLoader()).getURLs());
+			super(filterUrls(((URLClassLoader)getParentLoader()).getURLs()));
 		}
 		
 		@Override
