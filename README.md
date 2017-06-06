@@ -83,6 +83,39 @@ public class Main {
 
 ```
 
+**WARNING** For some people using IntelliJ IDEA, the JRE jars get prepended to the classpath. This confuses the crap
+out of JFXGL's classloader and you can see bizzare exceptions like ` java.lang.SecurityException: Prohibited package name`.
+JRE jars should not be on the classpath under normal circumstances so JFXGL makes an attempt to recognize JRE jars on the
+classpath and filter them out. If this happens, you'll see a warning on the console like:
+```
+JFXGL: JRE jar filtered from classpath: file:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/rt.jar
+```
+If, for some reason, you want to disable this automatic classpath filtering, you can by setting `JFXGLLauncher.filterJreJars
+= false` before calling `JFXGLLauncher.launchMain()`.
+
+
+### Kotlin support
+
+JFXGL works in Kotlin too! Here's how to invoke the special main in Kotlin:
+```kotlin
+import cuchaz.jfxgl.JFXGLLauncher
+
+
+fun main(args: Array<String>) {
+	JFXGLLauncher.launchMain(JfxglMain::class.java, args)
+}
+
+
+class JfxglMain {
+	companion object {
+		@JvmStatic fun jfxglmain(args: Array<String>) {
+			// start your app here like usual
+		}
+	}
+}
+```
+
+
 ### Hello World
 
 JFXGL is designed to work just like LWJGL3 and leave you complete control over your window and the render loop.
