@@ -95,6 +95,9 @@ JFXGL: JRE jar filtered from classpath: file:/usr/lib/jvm/java-8-openjdk-amd64/j
 If, for some reason, you want to disable this automatic classpath filtering, you can by setting `JFXGLLauncher.filterJreJars
 = false` before calling `JFXGLLauncher.launchMain()`.
 
+If you want to keep the classpath filtering, but suppress the console warnings, you can set
+`JFXGLLauncher.showFilterWarnings = false`.
+
 
 ### Kotlin support
 

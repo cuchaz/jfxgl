@@ -21,6 +21,7 @@ import sun.reflect.ConstantPool;
 public class JFXGLLauncher {
 	
 	public static boolean filterJreJars = true;
+	public static boolean showFilterWarnings = true;
 	
 	protected static class Loader extends URLClassLoader {
 		
@@ -64,7 +65,9 @@ public class JFXGLLauncher {
 				.filter((url) -> {
 					for (String jreExcludedJar : jreExcludedJars) {
 						if (url.getPath().endsWith(jreExcludedJar)) {
-							System.out.println("JFXGL: JRE jar filtered from classpath: " + url);
+							if (showFilterWarnings) {
+								System.out.println("JFXGL: JRE jar filtered from classpath: " + url);
+							}
 							return false;
 						}
 					}
