@@ -32,15 +32,17 @@ thing), and maybe others do too.
 
 [openjdk]: http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
 
-Use your favorite dependency manager (like [Gradle][gradle] or [Jerkar][jerkar]) to include the JFXGL jars onto
-your project's classpath. The newest version so far is ``0.3``. Here are the module ids:
+Use your favorite dependency manager (like [Gradle][gradle], [Jerkar][jerkar], or [Kobalt][kobalt])
+to include the JFXGL jars onto your project's classpath. The newest version so far is ``0.3.1``.
+Here are the module ids:
 ```
-cuchaz:jfxgl:0.3
+cuchaz:jfxgl:0.3.1
 cuchaz:jfxgl-jfxrt:0.3
 ```
 
 [gradle]: https://gradle.org
 [jerkar]: http://project.jerkar.org
+[kobalt]: http://beust.com/kobalt/home/index.html
 
 These artifacts are hosted at the Cuchaz Interactive Maven repository. It's a non-standard repository,
 so you'll need to add it to your dependency manager. The repo url is:

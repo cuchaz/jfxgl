@@ -6,4 +6,5 @@ build/output
 build/libs
 build/boot/options.properties
 bin
+maven
 
