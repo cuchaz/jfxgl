@@ -53,7 +53,7 @@ public class Build extends JkJavaBuild {
 	
 	@Override
 	public JkVersion version() {
-		return JkVersion.name("0.3.1");
+		return JkVersion.name("0.4");
 	}
 
 	@Override
@@ -84,7 +84,7 @@ public class Build extends JkJavaBuild {
 			.on(new File("../openjfx/modules/base/bin")).scope(PROVIDED)
 			
 			// 3rd-party libs
-			.on(lwjgl("3.1.1", "glfw", "jemalloc", "opengl"))
+			.on(lwjgl("3.1.2", "glfw", "jemalloc", "opengl"))
 			
 			.build();
 	}
