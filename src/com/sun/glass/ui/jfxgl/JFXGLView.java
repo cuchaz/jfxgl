@@ -9,7 +9,6 @@
  *************************************************************************/
 package com.sun.glass.ui.jfxgl;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.lwjgl.glfw.GLFW;
@@ -126,7 +125,7 @@ public class JFXGLView extends View {
 		@SuppressWarnings("deprecation")
 		int keyCode = translateKey(key).impl_getCode();
 		char[] keyChars = {};
-		int modifiers = translateMods(mods);
+		int modifiers = translateMods(mods, mouseButtonDown);
 		
 		notifyKey(type, keyCode, keyChars, modifiers);
 	}
@@ -138,12 +137,13 @@ public class JFXGLView extends View {
 		int keyCode = 0;
 		String str = new String(new int[] { codepoint }, 0, 1);
 		char[] keyChars = str.toCharArray();
-		int modifiers = translateMods(mods);
+		int modifiers = translateMods(mods, mouseButtonDown);
 		
 		notifyKey(type, keyCode, keyChars, modifiers);
 	}
 	
-	private Map<Integer,Boolean> mouseButtonIsDown = new HashMap<>();
+	private int mouseButtonDown = MouseEvent.BUTTON_NONE;
+	private int mouseMods = 0;
 	private int mouseX = 0;
 	private int mouseY = 0;
 
@@ -152,49 +152,34 @@ public class JFXGLView extends View {
 		// save the latest mouse pos
 		mouseX = (int)x;
 		mouseY = (int)y;
-		
-		// is a button down?
-		boolean isDown = false;
-		for (Boolean val : mouseButtonIsDown.values()) {
-			isDown = isDown || val;
-		}
-		
-		// translate from GLFW to JavaFX
-		int type = isDown ? MouseEvent.DRAG : MouseEvent.MOVE;
-		int button = MouseEvent.BUTTON_NONE;
-		int modifiers = 0;
-		
-		notifyMouse(type, button, modifiers);
+	
+		notifyMouse(mouseButtonDown == MouseEvent.BUTTON_NONE ? MouseEvent.MOVE : MouseEvent.DRAG, mouseButtonDown);
 	}
 
-	public void handleGLFWMouseButton(int button, int action, int mods) {
+	public void handleGLFWMouseButton(int glfwButton, int glfwAction, int glfwMods) {
 		
-		// translate from GLFW to JavaFX
-		int type = translateMouseAction(action);
-		button = translateMouseButton(button);
-		int modifiers = translateMods(mods);
+		int button = translateMouseButton(glfwButton);
 		
-		notifyMouse(type, button, modifiers);
-	
-		// update down state
-		switch (action) {
+		// save latest button state
+		switch (glfwAction) {
 			case GLFW.GLFW_PRESS:
-				mouseButtonIsDown.put(button, true);
+				mouseButtonDown = button;
 			break;
 			case GLFW.GLFW_RELEASE:
-				mouseButtonIsDown.put(button, false);
+				mouseButtonDown = MouseEvent.BUTTON_NONE;
 			break;
 		}
+		mouseMods = translateMods(glfwMods, mouseButtonDown);
+		
+		notifyMouse(translateMouseAction(glfwAction), button);
 	}
 	
-	private void notifyMouse(int type, int button, int modifiers) {
+	private void notifyMouse(int type, int button) {
 		
-		int xAbs = mouseX;
-		int yAbs = mouseY;
 		boolean isPopupTrigger = false; // do we need to implement this?
 		boolean isSynthesized = false; // do we need to implement this? has to do with touch stuff I think
 		
-		notifyMouse(type, button, mouseX, mouseY, xAbs, yAbs, modifiers, isPopupTrigger, isSynthesized);
+		notifyMouse(type, button, mouseX, mouseY, mouseX, mouseY, mouseMods, isPopupTrigger, isSynthesized);
 	}
 
 	public void handleGLFWScroll(double dx, double dy) {
@@ -348,42 +333,53 @@ public class JFXGLView extends View {
 		}
 	}
 	
-	private int translateMouseAction(int action) {
-		switch (action) {
+	private int translateMouseAction(int glfwAction) {
+		switch (glfwAction) {
 			case GLFW.GLFW_PRESS: return MouseEvent.DOWN;
 			case GLFW.GLFW_RELEASE: return MouseEvent.UP;
-			default: throw new RuntimeException("unknown mouse action: " + action);
+			default: throw new RuntimeException("unknown mouse action: " + glfwAction);
 		}
 	}
 	
-	private int translateMods(int mods) {
+	private int translateMods(int glfwMods, int button) {
 		
 		int modifiers = 0;
 		
-		if ((mods & GLFW.GLFW_MOD_SHIFT) != 0) {
+		if ((glfwMods & GLFW.GLFW_MOD_SHIFT) != 0) {
 			modifiers |= KeyEvent.MODIFIER_SHIFT;
 		}
 		
-		if ((mods & GLFW.GLFW_MOD_CONTROL) != 0) {
+		if ((glfwMods & GLFW.GLFW_MOD_CONTROL) != 0) {
 			modifiers |= KeyEvent.MODIFIER_CONTROL;
 		}
 		
-		if ((mods & GLFW.GLFW_MOD_ALT) != 0) {
+		if ((glfwMods & GLFW.GLFW_MOD_ALT) != 0) {
 			modifiers |= KeyEvent.MODIFIER_ALT;
 		}
 		
-		if ((mods & GLFW.GLFW_MOD_SUPER) != 0) {
+		if ((glfwMods & GLFW.GLFW_MOD_SUPER) != 0) {
 			modifiers |= KeyEvent.MODIFIER_WINDOWS;
 		}
+		
+		modifiers |= getButtonMods(button);
 		
 		return modifiers;
 	}
 		
-	private int translateMouseButton(int button) {
-		switch (button) {
+	private int translateMouseButton(int glfwButton) {
+		switch (glfwButton) {
 			case GLFW.GLFW_MOUSE_BUTTON_LEFT: return MouseEvent.BUTTON_LEFT;
 			case GLFW.GLFW_MOUSE_BUTTON_RIGHT: return MouseEvent.BUTTON_RIGHT;
 			default: return MouseEvent.BUTTON_OTHER;
+		}
+	}
+
+	private int getButtonMods(int button) {
+		switch (button) {
+			case MouseEvent.BUTTON_LEFT: return KeyEvent.MODIFIER_BUTTON_PRIMARY;
+			case MouseEvent.BUTTON_RIGHT: return KeyEvent.MODIFIER_BUTTON_SECONDARY;
+			case MouseEvent.BUTTON_OTHER: return KeyEvent.MODIFIER_BUTTON_MIDDLE;
+			default: return 0;
 		}
 	}
 }
