@@ -24,7 +24,7 @@ import org.lwjgl.opengl.GL11;
 
 import com.sun.glass.ui.jfxgl.JFXGLPlatformFactory;
 import com.sun.glass.ui.jfxgl.JFXGLView;
-import com.sun.glass.ui.jfxgl.JFXGLWindow;
+import com.sun.glass.ui.jfxgl.JFXGLMainWindow;
 import com.sun.javafx.application.ParametersImpl;
 import com.sun.javafx.application.PlatformImpl;
 import com.sun.javafx.tk.Toolkit;
@@ -147,9 +147,9 @@ public class JFXGL {
 			if (existingCallbacks.key != null) {
 				existingCallbacks.key.invoke(hwnd, key, scanCode, action, mods);
 			}
-			if (JFXGLWindow.mainWindow != null) {
+			if (JFXGLMainWindow.instance != null) {
 				runOnEventsThread(() -> {
-					JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
+					JFXGLView view = (JFXGLView)JFXGLMainWindow.instance.getView();
 					if (view != null) {
 						view.handleGLFWKey(key, scanCode, action, mods);
 					}
@@ -162,9 +162,9 @@ public class JFXGL {
 			if (existingCallbacks.keyChar != null) {
 				existingCallbacks.keyChar.invoke(hwnd, codepoint, mods);
 			}
-			if (JFXGLWindow.mainWindow != null) {
+			if (JFXGLMainWindow.instance != null) {
 				runOnEventsThread(() -> {
-					JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
+					JFXGLView view = (JFXGLView)JFXGLMainWindow.instance.getView();
 					if (view != null) {
 						view.handleGLFWKeyChar(codepoint, mods);
 					}
@@ -177,9 +177,9 @@ public class JFXGL {
 			if (existingCallbacks.cursorPos != null) {
 				existingCallbacks.cursorPos.invoke(hwnd, xpos, ypos);
 			}
-			if (JFXGLWindow.mainWindow != null) {
+			if (JFXGLMainWindow.instance != null) {
 				runOnEventsThread(() -> {
-					JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
+					JFXGLView view = (JFXGLView)JFXGLMainWindow.instance.getView();
 					if (view != null) {
 						view.handleGLFWCursorPos(xpos, ypos);
 					}
@@ -192,9 +192,9 @@ public class JFXGL {
 			if (existingCallbacks.mouseButton != null) {
 				existingCallbacks.mouseButton.invoke(hwnd, button, action, mods);
 			}
-			if (JFXGLWindow.mainWindow != null) {
+			if (JFXGLMainWindow.instance != null) {
 				runOnEventsThread(() -> {
-					JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
+					JFXGLView view = (JFXGLView)JFXGLMainWindow.instance.getView();
 					if (view != null) {
 						view.handleGLFWMouseButton(button, action, mods);
 					}
@@ -207,9 +207,9 @@ public class JFXGL {
 			if (existingCallbacks.scroll != null) {
 				existingCallbacks.scroll.invoke(hwnd, dx, dy);
 			}
-			if (JFXGLWindow.mainWindow != null) {
+			if (JFXGLMainWindow.instance != null) {
 				runOnEventsThread(() -> {
-					JFXGLView view = (JFXGLView)JFXGLWindow.mainWindow.getView();
+					JFXGLView view = (JFXGLView)JFXGLMainWindow.instance.getView();
 					if (view != null) {
 						view.handleGLFWScroll(dx, dy);
 					}
@@ -222,9 +222,9 @@ public class JFXGL {
 			if (existingCallbacks.windowFocus != null) {
 				existingCallbacks.windowFocus.invoke(hwnd, isFocused);
 			}
-			if (JFXGLWindow.mainWindow != null) {
+			if (JFXGLMainWindow.instance != null) {
 				runOnEventsThread(() -> {
-					JFXGLWindow.mainWindow.handleGLFWFocus(isFocused);
+					JFXGLMainWindow.instance.handleGLFWFocus(isFocused);
 				});
 			}
 		};

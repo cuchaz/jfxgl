@@ -31,8 +31,6 @@ import com.sun.scenario.DelayedRunnable;
 import cuchaz.jfxgl.EventsThreadNotRunningException;
 import cuchaz.jfxgl.InJavaFXGLContext;
 import javafx.scene.Scene;
-import javafx.stage.StageStyle;
-import javafx.stage.Window;
 
 public class JFXGLToolkit extends QuantumToolkit {
 	
@@ -262,11 +260,6 @@ public class JFXGLToolkit extends QuantumToolkit {
 		throw new UnsupportedOperationException("implement me!");
 	}
 	
-	@Override
-	public TKStage createTKPopupStage(Window peerWindow, StageStyle popupStyle, TKStage owner, AccessControlContext acc) {
-		throw new UnsupportedOperationException("implement me!");
-	}
-
 	@Override
 	public TKStage createTKEmbeddedStage(HostInterface host, AccessControlContext acc) {
 		throw new UnsupportedOperationException("implement me!");

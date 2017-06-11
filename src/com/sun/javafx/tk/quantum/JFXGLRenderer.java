@@ -13,7 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import com.sun.glass.ui.jfxgl.JFXGLWindow;
+import com.sun.glass.ui.jfxgl.JFXGLMainWindow;
+import com.sun.glass.ui.jfxgl.JFXGLPopupWindow;
 import com.sun.javafx.tk.RenderJob;
 import com.sun.javafx.tk.quantum.QuantumRenderer;
 import com.sun.prism.es2.JFXGLContexts;
@@ -22,12 +23,14 @@ public class JFXGLRenderer extends QuantumRenderer {
 	
 	private List<Runnable> jobQueue;
 	private List<Runnable> jobs;
+	private List<JFXGLPopupWindow> popups;
 
 	public JFXGLRenderer() {
 		super();
 		
 		jobQueue = new ArrayList<>();
 		jobs = new ArrayList<>();
+		popups = new ArrayList<>();
 		
 		// install to the QuantumRenderer singleton
 		QuantumRenderer.instanceReference.set(this);
@@ -81,8 +84,17 @@ public class JFXGLRenderer extends QuantumRenderer {
 		}
 		
 		// copy the javafx framebuffer to the main framebuffer
-		if (JFXGLWindow.mainWindow != null) {
-			JFXGLWindow.mainWindow.renderFramebuf();
+		if (JFXGLMainWindow.instance != null) {
+			JFXGLMainWindow.instance.renderFramebuf();
 		}
+		
+		// render any popup windows
+		// NOTE: JFXGLPopupWindow.windows is a synchronized list, so copy it to local storage before rendering
+		popups.clear();
+		popups.addAll(JFXGLPopupWindow.windows);
+		for (JFXGLPopupWindow popup : popups) {
+			popup.renderFramebuf(JFXGLMainWindow.instance.getWidth(), JFXGLMainWindow.instance.getHeight());
+		}
+		popups.clear();
 	}
 }

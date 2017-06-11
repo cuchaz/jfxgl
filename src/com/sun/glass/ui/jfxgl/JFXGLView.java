@@ -26,6 +26,9 @@ public class JFXGLView extends View {
 
 	private JFXGLWindow window;
 	
+	private int screenX;
+	private int screenY;
+	
 	@Override
 	@SuppressWarnings("rawtypes")
 	protected long _create(Map capabilities) {
@@ -52,12 +55,17 @@ public class JFXGLView extends View {
 
 	@Override
 	protected int _getX(long hscreen) {
-		return 0;
+		return screenX;
 	}
 
 	@Override
 	protected int _getY(long hscreen) {
-		return 0;
+		return screenY;
+	}
+	
+	public void setScreenPos(int x, int y) {
+		this.screenX = x;
+		this.screenY = y;
 	}
 
 	@Override
@@ -174,12 +182,41 @@ public class JFXGLView extends View {
 		notifyMouse(translateMouseAction(glfwAction), button);
 	}
 	
+	@CalledByMainThread
 	private void notifyMouse(int type, int button) {
 		
 		boolean isPopupTrigger = false; // do we need to implement this?
 		boolean isSynthesized = false; // do we need to implement this? has to do with touch stuff I think
 		
-		notifyMouse(type, button, mouseX, mouseY, mouseX, mouseY, mouseMods, isPopupTrigger, isSynthesized);
+		int mouseX = this.mouseX;
+		int mouseY = this.mouseY;
+		int screenX = mouseX + this.screenX;
+		int screenY = mouseY + this.screenY;
+		
+		// if this is the view for the main window, see if we should forward to popup windows/views
+		JFXGLView targetView = this;
+		if (window instanceof JFXGLMainWindow) {
+			JFXGLPopupWindow popup = findPopupAt(mouseX, mouseY);
+			if (popup != null) {
+				targetView = popup.getRenderView();
+				mouseX -= popup.getRenderX();
+				mouseY -= popup.getRenderY();
+			}
+		}
+		targetView.notifyMouse(type, button, mouseX, mouseY, screenX, screenY, mouseMods, isPopupTrigger, isSynthesized);
+	}
+	
+	private JFXGLPopupWindow findPopupAt(int x, int y) {
+		for (JFXGLPopupWindow popup : JFXGLPopupWindow.windows) {
+			int xrel = mouseX - popup.getRenderX();
+			if (xrel >= 0 && xrel <= popup.getWidth()) {
+				int yrel = mouseY - popup.getRenderY();
+				if (yrel >= 0 && yrel <= popup.getHeight()) {
+					return popup;
+				}
+			}
+		}
+		return null;
 	}
 
 	public void handleGLFWScroll(double dx, double dy) {

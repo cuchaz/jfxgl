@@ -14,9 +14,6 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.LinkedList;
 
-import org.lwjgl.PointerBuffer;
-import org.lwjgl.glfw.GLFW;
-
 import com.sun.glass.ui.Application;
 import com.sun.glass.ui.CommonDialogs.ExtensionFilter;
 import com.sun.glass.ui.CommonDialogs.FileChooserResult;
@@ -164,7 +161,11 @@ public class JFXGLApplication extends Application {
 
 	@Override
 	public Window createWindow(Window owner, Screen screen, int styleMask) {
-		return new JFXGLWindow(owner, screen, styleMask);
+		if (JFXGLMainWindow.instance == null) {
+			return new JFXGLMainWindow(owner, screen, styleMask);
+		} else {
+			return new JFXGLPopupWindow(owner, screen, styleMask);
+		}
 	}
 
 	@Override
@@ -231,12 +232,7 @@ public class JFXGLApplication extends Application {
 
 	@Override
 	protected Screen[] staticScreen_getScreens() {
-		PointerBuffer monitorHandles = GLFW.glfwGetMonitors();
-		Screen[] screens = new Screen[monitorHandles.limit()];
-		for (int i=0; i<monitorHandles.limit(); i++) {
-			screens[i] = JFXGLScreen.make(monitorHandles.get(i));
-		}
-		return screens;
+		return JFXGLScreen.getScreens();
 	}
 
 	@Override
