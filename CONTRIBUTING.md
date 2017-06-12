@@ -25,7 +25,7 @@ See the [README](https://bitbucket.org/cuchaz/jfxgl-env) there for instructions.
 If you modified OpenJFX and need to update the patch JFXGL uses, this handy command will do it.
 ```
 $ cd jfxgl/openjfx
-$ hg diff -g > ../jfxgl/openjfx.patch
+$ hg diff -g > ../JFXGL/openjfx.patch
 ```
 If the patch file contains any changes from Eclipse metadata (like the `.classpath` file),
 you may want to remove them from the patch file.

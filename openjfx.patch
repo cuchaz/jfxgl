@@ -1,3 +1,23 @@
+diff --git a/modules/controls/src/main/java/javafx/scene/control/Dialog.java b/modules/controls/src/main/java/javafx/scene/control/Dialog.java
+--- a/modules/controls/src/main/java/javafx/scene/control/Dialog.java
++++ b/modules/controls/src/main/java/javafx/scene/control/Dialog.java
+@@ -244,7 +244,7 @@
+      *
+      **************************************************************************/
+ 
+-    final FXDialog dialog;
++    final FXDialog dialog = new HeavyweightDialog(this);
+ 
+     private boolean isClosing;
+ 
+@@ -260,7 +260,6 @@
+      * Creates a dialog without a specified owner.
+      */
+     public Dialog() {
+-        this.dialog = new HeavyweightDialog(this);
+         setDialogPane(new DialogPane());
+         initModality(Modality.APPLICATION_MODAL);
+     }
 diff --git a/modules/graphics/src/main/java/com/sun/javafx/tk/Toolkit.java b/modules/graphics/src/main/java/com/sun/javafx/tk/Toolkit.java
 --- a/modules/graphics/src/main/java/com/sun/javafx/tk/Toolkit.java
 +++ b/modules/graphics/src/main/java/com/sun/javafx/tk/Toolkit.java

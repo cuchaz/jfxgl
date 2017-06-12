@@ -54,16 +54,12 @@ public class JFXGLPopupWindow extends JFXGLWindow {
 		// get our context
 		context = JFXGLContexts.app;
 		
-		// TODO: register popup windows somewhere
-		// so the renderer can find them
+		windows.add(this);
 	}
 	
 	@Override
 	@CalledByEventsThread
 	protected long _createWindow(long ownerhwnd, long screenhwnd, int mask) {
-		
-		windows.add(this);
-		
 		// use the main app hwnd
 		return JFXGLContexts.app.hwnd;
 	}
