@@ -36,8 +36,8 @@ public class JFXGLPopupWindow extends JFXGLWindow {
 	private JFXGLContext context = null;
 	private JFXGLView view = null;
 	
-	private int renderY = 0;
 	private int renderX = 0;
+	private int renderY = 0;
 	private int width = 0;
 	private int height = 0;
 	private OffscreenBuffer buf = null;
@@ -90,28 +90,37 @@ public class JFXGLPopupWindow extends JFXGLWindow {
 	protected void _setBounds(long hwnd, int x, int y, boolean xSet, boolean ySet, int w, int h, int cw, int ch, float xGravity, float yGravity) {
 		
 		if (xSet) {
-			this.renderY = x - JFXGLMainWindow.instance.getX();
+			this.renderX = x - JFXGLMainWindow.instance.getX();
 		}
 		if (ySet) {
-			this.renderX = y - JFXGLMainWindow.instance.getY();
+			this.renderY = y - JFXGLMainWindow.instance.getY();
 		}
 		
-		this.width = w;
-		this.height = h;
+		// sometimes the standard wh doesn't have info, so use the client
+		if (w > 0) {
+			this.width = w;
+		} else if (cw > 0) {
+			this.width = cw;
+		}
+		if (h > 0) {
+			this.height = h;
+		} else if (ch > 0) {
+			this.height = ch;
+		}
 		
 		// tell the window and view to resize
-		notifyResize(WindowEvent.RESIZE, width, height);
+		notifyResize(WindowEvent.RESIZE, this.width, this.height);
 		if (view != null) {
 			view.notifyResize(this.width, this.height);
 		}
 	}
 	
 	public int getRenderX() {
-		return renderY;
+		return renderX;
 	}
 	
 	public int getRenderY() {
-		return renderX;
+		return renderY;
 	}
 	
 	public int getRenderWidth() {
@@ -165,8 +174,8 @@ public class JFXGLPopupWindow extends JFXGLWindow {
 			glstate.backup();
 			
 			// compute pos
-			int x = renderY;
-			int y = windowHeight - height - renderX;
+			int x = renderX;
+			int y = windowHeight - height - renderY;
 			
 			GL11.glEnable(GL11.GL_BLEND);
 			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);

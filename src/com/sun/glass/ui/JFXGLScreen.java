@@ -101,6 +101,8 @@ public class JFXGLScreen {
 		int wb = wy;
 		int wt = wy + wh;
 		
+		int mainIndex = -1;
+		
 		// intersect the screen with the window
 		Screen[] screens = getScreens();
 		for (int i=0; i<screens.length; i++) {
@@ -128,6 +130,18 @@ public class JFXGLScreen {
 			int iw = ir - il;
 			int ih = it - ib;
 			screens[i] = JFXGLScreen.copySetVisible(screen, il, ib, iw, ih);
+			
+			// keep track of the first intersection
+			if (mainIndex == -1) {
+				mainIndex = i;
+			}
+		}
+		
+		// if a screen intersected the window, move it to the front
+		if (mainIndex != -1 && screens.length > 1) {
+			Screen swap = screens[0];
+			screens[0] = screens[mainIndex];
+			screens[mainIndex] = swap;
 		}
 		
 		// tell the rest of JavaFX to read the new screen settings
