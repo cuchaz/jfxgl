@@ -107,8 +107,8 @@ public class JFXGLApplication extends Application {
 			if (event != null) {
 				try {
 					event.dispatch();
-				} catch (Exception ex) {
-					reportException(ex);
+				} catch (Throwable t) {
+					reportException(t);
 				}
 			}
 		}

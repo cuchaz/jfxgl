@@ -234,21 +234,13 @@ public class JFXGL {
 	}
 	
 	public static void runOnEventsThread(CheckedRunnable runnable) {
-		
-		AtomicReference<Throwable> eventsException = new AtomicReference<>(null);
-		
 		JFXGLToolkit.runLater(() -> {
 			try {
 				runnable.run();
-			} catch (Throwable t) {
-				eventsException.set(t);
+			} catch (Exception ex) {
+				throw new RuntimeException(ex);
 			}
 		});
-		
-		Throwable t = eventsException.get();
-		if (t != null) {
-			throw new RuntimeException(t);
-		}
 	}
 	
 	public static void runOnEventsThreadAndWait(CheckedRunnable runnable) {
