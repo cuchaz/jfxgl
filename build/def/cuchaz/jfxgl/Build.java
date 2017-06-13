@@ -10,6 +10,9 @@
 package cuchaz.jfxgl;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.zip.Deflater;
+import java.util.zip.ZipOutputStream;
 
 import org.jerkar.api.depmanagement.JkDependencies;
 import org.jerkar.api.depmanagement.JkMavenPublication;
@@ -25,6 +28,8 @@ import org.jerkar.api.depmanagement.JkVersionedModule;
 import org.jerkar.api.file.JkFileTreeSet;
 import org.jerkar.api.file.JkPathFilter;
 import org.jerkar.api.java.JkJavaCompiler;
+import org.jerkar.api.utils.JkUtilsIO;
+import org.jerkar.api.utils.JkUtilsZip;
 import org.jerkar.tool.JkDoc;
 import org.jerkar.tool.builtins.eclipse.JkBuildPluginEclipse;
 import org.jerkar.tool.builtins.javabuild.JkJavaBuild;
@@ -157,6 +162,24 @@ public class Build extends JkJavaBuild {
 		// publish to the local maven repo
 		JkPublishRepo repo = JkRepo.maven(pathMavenRepo).asPublishRepo();
 		
+		// make a cross-platform jfxrt.jar
+		File crossPlatformJar = ouputDir(moduleId().group() + "." + moduleId().name() + "-jfxrt-" + version() + ".jar");
+		crossPlatformJar.delete();
+		ZipOutputStream zout = JkUtilsZip.createZipOutputStream(crossPlatformJar, Deflater.DEFAULT_COMPRESSION);
+		JkUtilsZip.mergeZip(zout, JkUtilsZip.zipFile(file("../openjfx/build/sdk/rt/lib/ext/jfxrt.jar")));
+		File classesDir = file("../openjfx/modules/graphics/build/classes/main");
+		File es2Dir = new File(classesDir, "com/sun/prism/es2");
+		for (String os : Arrays.asList("EGLFB", "EGLX11", "IOS", "Mac", "Monocle", "Win", "X11")) {
+			for (String filename : Arrays.asList("GLContext", "GLDrawable", "GLFactory", "GLPixelFormat")) {
+				File file = new File(es2Dir, os + filename + ".class");
+				if (!file.exists()) {
+					throw new Error("Missing cross-platform ES2 class file: " + file);
+				}
+				JkUtilsZip.addZipEntry(zout, file, classesDir);
+			}
+		}
+		JkUtilsIO.closeQuietly(zout);
+		
 		// publish jfxrt.jar
 		JkMavenPublicationInfo jfxrtInfo = ownInfo(JkMavenPublicationInfo.of(
 			"JavaFX for JFXGL",
@@ -169,7 +192,7 @@ public class Build extends JkJavaBuild {
 		); 
 		JkPublisher.of(repo).publishMaven(
 			jfxrtMod,
-			JkMavenPublication.of(file("../openjfx/build/sdk/rt/lib/ext/jfxrt.jar"))
+			JkMavenPublication.of(crossPlatformJar)
 				.with(jfxrtInfo),
 			JkDependencies.of()
 		);
