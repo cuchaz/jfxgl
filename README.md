@@ -121,6 +121,44 @@ class JfxglMain {
 ```
 
 
+### Ceylon support
+
+JFXGL works in Ceylon too! (h/t to Gavin King @1ovthafew for the assist) Try this snippet:
+```ceylon
+
+import java.lang {
+	ObjectArray,
+	JString=String
+}
+
+import cuchaz.jfxgl {
+	JFXGLLauncher
+}
+
+
+shared void run() {
+	JFXGLLauncher.launchMain(`JfxglMain`, null);
+}
+
+
+shared class JfxglMain {
+	
+	shared static void jfxglmain(ObjectArray<JString> args) {
+		// start your app here like usual
+	}
+	
+	shared new () {}
+}
+
+```
+For this to work, you have to run your Ceylon app in "flat classpath" mode. In Eclipse, try the "Run As .. FatJar" command.
+On the command-line, you'll need this:
+```
+    $ ceylon run --flat-classpath <your app info here>
+```
+Ceylon's module system is really sweet though. Maybe someday we can add custom support for Ceylon's classloaders.
+
+
 ### Hello World
 
 JFXGL is designed to work just like LWJGL3 and leave you complete control over your window and the render loop.
