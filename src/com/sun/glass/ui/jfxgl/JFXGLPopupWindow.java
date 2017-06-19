@@ -44,7 +44,7 @@ public class JFXGLPopupWindow extends JFXGLWindow {
 	private GLState glstate = new GLState(
 		GLState.Blend, GLState.BlendFunc, GLState.ShaderProgram,
 		GLState.ActiveTexture, GLState.Texture2D[0],
-		GLState.VertexArray, GLState.ArrayBuffer,
+		GLState.VertexArray, GLState.ArrayBuffer, GLState.ElementArrayBuffer,
 		GLState.Viewport
 	);
 	

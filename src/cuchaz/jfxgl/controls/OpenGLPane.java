@@ -9,8 +9,8 @@
  *************************************************************************/
 package cuchaz.jfxgl.controls;
 
-import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.system.Callback;
 
 import com.sun.javafx.geom.BaseBounds;
 import com.sun.javafx.geom.RectBounds;
@@ -28,6 +28,7 @@ import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
 import cuchaz.jfxgl.GLState;
 import cuchaz.jfxgl.InJavaFXGLContext;
+import cuchaz.jfxgl.LWJGLDebug;
 import javafx.animation.AnimationTimer;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.StackPane;
@@ -39,12 +40,13 @@ public class OpenGLPane extends StackPane {
 		private final OpenGLPane pane;
 		
 		private JFXGLContext context;
+		private Callback debugCallback;
 		private OffscreenBuffer buf;
 		
 		private GLState glstate = new GLState(
 			GLState.Blend, GLState.BlendFunc, GLState.ShaderProgram,
 			GLState.ActiveTexture, GLState.Texture2D[0],
-			GLState.VertexArray, GLState.ArrayBuffer
+			GLState.VertexArray, GLState.ArrayBuffer, GLState.ElementArrayBuffer
 		);
 		
 		@CalledByEventsThread
@@ -69,6 +71,10 @@ public class OpenGLPane extends StackPane {
 				if (buf != null) {
 					buf.cleanup();
 					buf = null;
+				}
+				if (debugCallback != null) {
+					debugCallback.free();
+					debugCallback = null;
 				}
 				JFXGLContexts.cleanupPane(this);
 				
@@ -96,9 +102,12 @@ public class OpenGLPane extends StackPane {
 			
 			// make the context if needed
 			if (context == null) {
-				// NOTE: make a context that's compatible with JavaFX, which means we need to be backwards-compatible
-				GLFW.glfwDefaultWindowHints();
 				context = JFXGLContexts.makeNewPane(this);
+			}
+			
+			// enable debugging
+			if (debugCallback == null) {
+				debugCallback = LWJGLDebug.enableDebugging();
 			}
 				
 			// init the pane if needed (in its GL context)

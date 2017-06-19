@@ -110,9 +110,8 @@ public class TexturedQuad {
 				0, 2, 3
 			});
 			iboId = GL15.glGenBuffers();
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, iboId);
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, indexBuf, GL15.GL_STATIC_DRAW);
 			GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, iboId);
+			GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indexBuf, GL15.GL_STATIC_DRAW);
 			
 			// make the vertices
 			FloatBuffer vertexBuf = m.floats(new float[] {

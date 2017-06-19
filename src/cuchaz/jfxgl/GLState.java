@@ -131,6 +131,15 @@ public class GLState {
 		}
 	);
 	
+	public static final Part.IntVal ElementArrayBuffer = new Part.IntVal(
+		() -> {
+			return GL11.glGetInteger(GL15.GL_ELEMENT_ARRAY_BUFFER_BINDING);
+		},
+		(int val) -> {
+			GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, val);
+		}
+	);
+	
 	public static final Part.BoolVal DepthMask = new Part.BoolVal(
 		() -> {
 			return GL11.glGetInteger(GL11.GL_DEPTH_WRITEMASK) == GL11.GL_TRUE;

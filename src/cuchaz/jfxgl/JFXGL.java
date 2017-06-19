@@ -21,10 +21,11 @@ import org.lwjgl.glfw.GLFWMouseButtonCallbackI;
 import org.lwjgl.glfw.GLFWScrollCallbackI;
 import org.lwjgl.glfw.GLFWWindowFocusCallbackI;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.system.Callback;
 
+import com.sun.glass.ui.jfxgl.JFXGLMainWindow;
 import com.sun.glass.ui.jfxgl.JFXGLPlatformFactory;
 import com.sun.glass.ui.jfxgl.JFXGLView;
-import com.sun.glass.ui.jfxgl.JFXGLMainWindow;
 import com.sun.javafx.application.ParametersImpl;
 import com.sun.javafx.application.PlatformImpl;
 import com.sun.javafx.tk.Toolkit;
@@ -56,6 +57,7 @@ public class JFXGL {
 	private static PlatformImpl.FinishListener finishListener;
 	private static GLFWCallbacks ourCallbacks;
 	private static GLFWCallbacks existingCallbacks;
+	private static Callback debugCallback;
 	
 	private JFXGL() {
 		// static only class, don't instantiate
@@ -68,10 +70,9 @@ public class JFXGL {
 		JFXGLContexts.app = JFXGLContext.wrapExisting(hwnd);
 		
 		// init the JavaFX OpenGL context
-		// NOTE: JavaFX requires a backward-compatible context, it uses some old v2 stuff
-		GLFW.glfwDefaultWindowHints();
 		JFXGLContexts.javafx = JFXGLContext.makeNewSharedWith(JFXGLContexts.app.hwnd);
 		JFXGLContexts.javafx.makeCurrent();
+		debugCallback = LWJGLDebug.enableDebugging();
 		
 		// init OpenGL state expected by JavaFX rendering
 		GL11.glEnable(GL11.GL_BLEND);
@@ -337,6 +338,10 @@ public class JFXGL {
 			}
 			if (toolkit != null) {
 				toolkit.disposePipeline();
+			}
+			if (debugCallback != null) {
+				debugCallback.free();
+				debugCallback = null;
 			}
 			JFXGLContexts.cleanup();
 		}

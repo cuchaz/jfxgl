@@ -16,6 +16,7 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
@@ -32,8 +33,7 @@ import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
 
 import com.sun.prism.Texture.WrapMode;
-import com.sun.prism.es2.GLContext;
-import com.sun.prism.es2.GLDrawable;
+import com.sun.prism.impl.BufferUtil;
 import com.sun.prism.paint.Color;
 
 import cuchaz.jfxgl.GLState;
@@ -70,6 +70,9 @@ public class JFXGLContext extends GLContext {
 		// at least make the window hidden though
 		GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
 		long hwnd = GLFW.glfwCreateWindow(1, 1, "JavaFX", MemoryUtil.NULL, sharedHwnd);
+		if (hwnd <= 0) {
+			throw new Error("Can't create GLFW window for shared context");
+		}
 		
 		return new JFXGLContext(hwnd);
 	}
@@ -406,7 +409,14 @@ public class JFXGLContext extends GLContext {
 
 	@Override
 	public int getIntParam(int param) {
-		return GL11.glGetInteger(translatePrismToGL(param));
+		
+		// filter out some unsupported OpenGL params
+		param = translatePrismToGL(param);
+		if (param == GL30.GL_MAX_VARYING_COMPONENTS) {
+			return 0;
+		}
+		
+		return GL11.glGetInteger(param);
 	}
 
 	@Override
@@ -494,17 +504,39 @@ public class JFXGLContext extends GLContext {
 			buf = imageBuf;
 		}
 		
+		// convert values from prism to opengl
+		target = translatePrismToGL(target);
+		internalFormat = translatePrismToGL(internalFormat);
+		format = translatePrismToGL(format);
+		type = translatePrismToGL(type);
+		
+		// alpha and luminance formats aren't supported in core profiles anymore, so convert to RGBA
+		if (format == GL11.GL_ALPHA) {
+			format = GL11.GL_RGBA;
+			
+			if (buf != null) {
+				buf = convertPixelsAlphaToRGBA(buf);
+			}
+			
+		} else if (format == GL11.GL_LUMINANCE) {
+			throw new IllegalArgumentException("luminance textures aren't supported in core profiles");
+		}
+		
+		if (internalFormat == GL11.GL_ALPHA || internalFormat == GL11.GL_LUMINANCE) {
+			internalFormat = GL11.GL_RGBA;
+		}
+		
 		clearGLErrors();
 		
 		GL11.glTexImage2D(
-			translatePrismToGL(target),
+			target,
 			level,
-			translatePrismToGL(internalFormat),
+			internalFormat,
 			width,
 			height,
 			border,
-			translatePrismToGL(format),
-			translatePrismToGL(type),
+			format,
+			type,
 			buf
 		);
 		
@@ -531,18 +563,50 @@ public class JFXGLContext extends GLContext {
 			imageBuf = updateBuffer(imageBuf, buf);
 			buf = imageBuf;
 		}
-
+		
+		// convert values from prism to opengl
+		target = translatePrismToGL(target);
+		format = translatePrismToGL(format);
+		type = translatePrismToGL(type);
+		
+		// alpha and luminance formats aren't supported in core profiles anymore, so convert to RGBA
+		if (format == GL11.GL_ALPHA) {
+			format = GL11.GL_RGBA;
+			
+			if (buf != null) {
+				buf = convertPixelsAlphaToRGBA(buf);
+			}
+			
+		} else if (format == GL11.GL_LUMINANCE) {
+			throw new IllegalArgumentException("luminance textures aren't supported in core profiles");
+		}
+		
 		GL11.glTexSubImage2D(
-			translatePrismToGL(target),
+			target,
 			level,
 			xoffset,
 			yoffset,
 			width,
 			height,
-			translatePrismToGL(format),
-			translatePrismToGL(type),
+			format,
+			type,
 			buf
 		);
+	}
+	
+	private ByteBuffer convertPixelsAlphaToRGBA(ByteBuffer buf) {
+		
+		ByteBuffer expandedBuf = BufferUtil.newByteBuffer(buf.limit()*4);
+		buf.rewind();
+		while (buf.hasRemaining()) {
+			expandedBuf.put((byte)0);
+			expandedBuf.put((byte)0);
+			expandedBuf.put((byte)0);
+			expandedBuf.put(buf.get());
+		}
+		expandedBuf.flip();
+		
+		return expandedBuf;
 	}
 	
 	@Override
@@ -663,6 +727,7 @@ public class JFXGLContext extends GLContext {
 	@Override
 	public void enableVertexAttributes() {
 		// JavaFX apparently uses attributes in [0,3], see drawIndexedQuads()
+		bindVertexArray();
 		GL20.glEnableVertexAttribArray(0);
 		GL20.glEnableVertexAttribArray(1);
 		GL20.glEnableVertexAttribArray(2);
@@ -671,6 +736,7 @@ public class JFXGLContext extends GLContext {
 
 	@Override
 	public void disableVertexAttributes() {
+		bindVertexArray();
 		GL20.glDisableVertexAttribArray(0);
 		GL20.glDisableVertexAttribArray(1);
 		GL20.glDisableVertexAttribArray(2);
@@ -685,8 +751,34 @@ public class JFXGLContext extends GLContext {
 	private static final int Tex1OffsetBytes = Tex0OffsetBytes + TexCoordFloats*Float.BYTES;
 	private static final int ColorBytes = 4;
 	
+	private int indexedQuadsVaId = -1;
+	private int indexedQuadsCoordsId = -1;
+	private int indexedQuadsColorsId = -1;
+	private int iboId = -1;
+	
+	private void bindVertexArray() {
+		
+		if (indexedQuadsVaId != -1) {
+			GL30.glBindVertexArray(indexedQuadsVaId);
+			return;
+		}
+		
+		// make a new vertex array id
+		indexedQuadsVaId = GL30.glGenVertexArrays();
+		GL30.glBindVertexArray(indexedQuadsVaId);
+		
+		// make an index buffer id
+		iboId = GL15.glGenBuffers();
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, iboId);
+		
+		// make the other buffer ids
+		indexedQuadsCoordsId = GL15.glGenBuffers();
+		indexedQuadsColorsId = GL15.glGenBuffers();
+	}
+	
 	private ByteBuffer indexedQuadsCoordsBuf = null;
 	private ByteBuffer indexedQuadsColorsBuf = null;
+	private ShortBuffer ibo = null;
 	
 	@Override
 	public void drawIndexedQuads(float coords[], byte colors[], int numVertices) {
@@ -695,34 +787,51 @@ public class JFXGLContext extends GLContext {
 		int numIndices = numQuads*2*3;
 		
 		// for some reason (compatibility maybe?) JavaFX keeps all its data on the JVM heap (eg, in arrays)
-		// sadly, LWJGL won't let use attribute offsets on heap buffers, so we need to copy into direct buffers
-		// hopefully we're not drawing that many quads, and this won't be too slow
+		// sadly, LWJGL won't let us use attribute offsets on heap buffers, so we need to copy into direct buffers
+		// hopefully we're not drawing that many quads in JavaFX, and this won't be too slow
+		
+		bindVertexArray();
 		
 		// pos,tex coords
 		indexedQuadsCoordsBuf = updateBuffer(indexedQuadsCoordsBuf, coords, numVertices*PosTexBytes);
-		GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, PosTexBytes, MemoryUtil.memAddress(indexedQuadsCoordsBuf) +  PosOffsetBytes);
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, indexedQuadsCoordsId);
+		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, indexedQuadsCoordsBuf, GL15.GL_STATIC_DRAW);
+		GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, PosTexBytes, PosOffsetBytes);
 		// index 1 is color, handled below
-		GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, PosTexBytes, MemoryUtil.memAddress(indexedQuadsCoordsBuf) + Tex0OffsetBytes);
-		GL20.glVertexAttribPointer(3, 2, GL11.GL_FLOAT, false, PosTexBytes, MemoryUtil.memAddress(indexedQuadsCoordsBuf) + Tex1OffsetBytes);
+		GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, PosTexBytes, Tex0OffsetBytes);
+		GL20.glVertexAttribPointer(3, 2, GL11.GL_FLOAT, false, PosTexBytes, Tex1OffsetBytes);
 		
 		// colors
 		indexedQuadsColorsBuf = updateBuffer(indexedQuadsColorsBuf, colors, numVertices*ColorBytes);
-		GL20.glVertexAttribPointer(1, 4, GL11.GL_UNSIGNED_BYTE, true, ColorBytes, indexedQuadsColorsBuf);
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, indexedQuadsColorsId);
+		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, indexedQuadsColorsBuf, GL15.GL_STATIC_DRAW);
+		GL20.glVertexAttribPointer(1, 4, GL11.GL_UNSIGNED_BYTE, true, ColorBytes, 0);
 		
+		// finally, draw the triangles!
 		GL11.glDrawElements(GL11.GL_TRIANGLES, numIndices, GL11.GL_UNSIGNED_SHORT, 0);
 	}
-
+	
 	@Override
 	public int createIndexBuffer16(short data[]) {
-		int id = GL15.glGenBuffers();
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, id);
-		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, data, GL15.GL_STATIC_DRAW);
-		return id;
+		
+		if (ibo != null) {
+			throw new IllegalStateException("can only create one index buffer");
+		}
+		
+		ibo = BufferUtils.createShortBuffer(data.length);
+		ibo.put(data);
+		ibo.flip();
+		
+		bindVertexArray();
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, iboId);
+		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, ibo, GL15.GL_STATIC_DRAW);
+		
+		return iboId;
 	}
-
+	
 	@Override
-	public void setIndexBuffer(int ib) {
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, ib);
+	public void setIndexBuffer(int id) {
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, id);
 	}
 
 	@Override
