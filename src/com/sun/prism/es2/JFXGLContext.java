@@ -224,6 +224,11 @@ public class JFXGLContext extends GLContext {
 			type = GL20.GL_FRAGMENT_SHADER;
 		}
 		
+		// try to massage JavaFX shaders into modern OpenG
+		if (source.startsWith("#ifdef GL_ES\n")) {
+			source = modernizeShader(source, isVertex);
+		}
+		
 		int id = GL20.glCreateShader(type);
 		GL20.glShaderSource(id, source);
 		GL20.glCompileShader(id);
@@ -252,6 +257,34 @@ public class JFXGLContext extends GLContext {
 		}
 		
 		return id;
+	}
+	
+	private String modernizeShader(String source, boolean isVertex) {
+		
+		// replace attribute with in
+		source = source.replaceAll("attribute ", "in ");
+		
+		if (isVertex) {
+			
+			// replace varying with out
+			source = source.replaceAll("varying ", "out ");
+			
+		} else {
+			
+			// replace varying with in
+			source = source.replaceAll("varying ", "in ");
+			
+			// add an out var for the color
+			source = source.replaceAll("gl_FragColor", "outFragColor");
+			source = "out vec4 outFragColor;\n\n" + source;
+			
+			// replace calls to texture2D with texture
+			source = source.replaceAll("texture2D", "texture");
+		}
+		
+		source = "#version 150\n\n" + source;
+		
+		return source;
 	}
 
 	@Override
@@ -312,11 +345,15 @@ public class JFXGLContext extends GLContext {
 		if (!isSuccess) {
 			throw new RuntimeException("Shader program did not link:\n" + GL20.glGetProgramInfoLog(id, 4096));
 		}
+		
+		/* TODO: move this check to another function call
+		 * apparently we need a bound VAO to validate the shader program
 		GL20.glValidateProgram(id);
 		isSuccess = GL20.glGetProgrami(id, GL20.GL_VALIDATE_STATUS) == GL11.GL_TRUE;
 		if (!isSuccess) {
 			throw new RuntimeException("Shader program did not validate:\n" + GL20.glGetProgramInfoLog(id, 4096));
 		}
+		*/
 		
 		return id;
 	}

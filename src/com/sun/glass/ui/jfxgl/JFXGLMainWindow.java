@@ -156,13 +156,16 @@ public class JFXGLMainWindow extends JFXGLWindow {
 		// tell JavaFX to update the view size
 		if (this.view != null) {
 			
-			// get the initial window size
+			// get the initial window size and pos
 			try (MemoryStack m = MemoryStack.stackPush()) {
 				IntBuffer widthBuf = m.callocInt(1);
 				IntBuffer heightBuf = m.callocInt(1);
 				GLFW.glfwGetWindowSize(context.hwnd, widthBuf, heightBuf);
 				width = widthBuf.get(0);
 				height = heightBuf.get(0);
+				GLFW.glfwGetWindowPos(context.hwnd, widthBuf, heightBuf);
+				x = widthBuf.get(0);
+				y = heightBuf.get(0);
 			}
 			
 			// if we notify resize now, JavaFX just ignores it
@@ -170,7 +173,10 @@ public class JFXGLMainWindow extends JFXGLWindow {
 			JFXGLToolkit.runLater(() -> {
 				notifyResize(WindowEvent.RESIZE, width, height);
 				this.view.notifyResize(width, height);
+				this.view.setScreenPos(x, y);
+				notifyMove(x, y);
 			});
+			JFXGLScreen.update(this.x, this.y, this.width, this.height);
 		}
 		
 		return true;

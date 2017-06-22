@@ -13,10 +13,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
+import org.lwjgl.opengl.GL11;
+
 import com.sun.glass.ui.jfxgl.JFXGLMainWindow;
 import com.sun.glass.ui.jfxgl.JFXGLPopupWindow;
 import com.sun.javafx.tk.RenderJob;
-import com.sun.javafx.tk.quantum.QuantumRenderer;
 import com.sun.prism.es2.JFXGLContexts;
 
 public class JFXGLRenderer extends QuantumRenderer {
@@ -69,7 +70,7 @@ public class JFXGLRenderer extends QuantumRenderer {
 		}
 		
 		if (!jobs.isEmpty()) {
-		
+			
 			// switch to JavaFX context for JavaFX rendering
 			JFXGLContexts.javafx.makeCurrent();
 		
@@ -78,6 +79,10 @@ public class JFXGLRenderer extends QuantumRenderer {
 				job.run();
 			}
 			jobs.clear();
+			
+			// explicitly flush all rendering so we can sync between contexts
+			// (OSX driver doesn't seem to be smart enough to do this automatically)
+			GL11.glFinish();
 			
 			// switch back to app context for non-JavaFX rendering
 			JFXGLContexts.app.makeCurrent();

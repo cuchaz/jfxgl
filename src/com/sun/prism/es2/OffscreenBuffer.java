@@ -39,6 +39,14 @@ public class OffscreenBuffer {
 		resize(width, height);
 	}
 	
+	public int getWidth() {
+		return width;
+	}
+	
+	public int getHeight() {
+		return height;
+	}
+	
 	public boolean resize(int width, int height) {
 		
 		if (this.width == width && this.height == height) {

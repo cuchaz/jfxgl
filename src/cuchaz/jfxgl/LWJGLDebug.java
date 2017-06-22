@@ -16,6 +16,7 @@ import java.util.Set;
 
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.opengl.GLDebugMessageCallback;
@@ -30,7 +31,28 @@ public class LWJGLDebug {
 	public static Integer[] exceptionSeverities = { GL43.GL_DEBUG_SEVERITY_HIGH };
 	public static Integer[] reportSeverities = { GL43.GL_DEBUG_SEVERITY_HIGH, GL43.GL_DEBUG_SEVERITY_MEDIUM, GL43.GL_DEBUG_SEVERITY_LOW };
 	
+	public static boolean isDebuggingSupported() {
+		int major = GL11.glGetInteger(GL30.GL_MAJOR_VERSION);
+		if (major < 4) {
+			return false;
+		} else if (major > 4) {
+			return true;
+		} else {
+			int minor = GL11.glGetInteger(GL30.GL_MINOR_VERSION);
+			return minor >= 3;
+		}
+	}
+	
 	public static Callback enableDebugging() {
+		
+		if (!isDebuggingSupported()) {
+			
+			// give a dummy callback so calling code doesn't have to care if this isn't supported
+			return new Callback(0) {
+				@Override
+				public void free() { /* NOP */ }
+			};
+		}
 		
 		// copy global state for the closure
 		PrintStream stream = LWJGLDebug.stream;
