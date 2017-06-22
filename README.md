@@ -57,7 +57,7 @@ you can use.
 
 [lwjgl-download]: https://www.lwjgl.org/download
 
-JFXGL also requires OpenGL drivers v3.0 or higher to be installed on your machine.
+JFXGL also requires OpenGL drivers supporting OpenGL v3.2 or higher to be installed on your machine.
 
 
 ### Special main()
