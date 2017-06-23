@@ -9,12 +9,26 @@
 
 [![JFXGL Demo](https://pbs.twimg.com/ext_tw_video_thumb/837354511853309954/pu/img/36SoaDoKpHhO3CvL.jpg)](https://twitter.com/cuchaz/status/837355916789952513)
 
+## What is JFXGL?
+
+JFXGL is a cross-platform solution for integrating modern-style OpenGL rendering (v3.2+) with JavaFX UIs in JVM 8
+applications. This project is intendeded for desktop use, and all three major platforms are supported: Linux, OSX,
+and Windows.
+
+Even though JavaFX was developed for OpenGL v2, JFXGL provides a compatibilty layer that seamlessly translates
+JavaFX for use in OpenGL v3.2+ core profiles that lack v2 functionality. This allows applications to combine
+fully modern OpenGL rendering techniques with JavaFX UIs even on platforms that don't support OpenGL compatibility
+profiles, like OSX.
+
 JFXGL was developed as a component for my upcoming Java-based 2D video game engine, the [Horde Engine][horde].
-The game engine is still in development, but hopefully I can finally finish JFXGL and go back to working on it.
+The game engine is still in development, but when it's ready, the Horde Engine will allow game developers to
+use fully-featured JavaFX UIs in their games via very easy-to-use tooling. The strong UI system in Horde makes
+it useful for non-game applications that need hardware-accelerated rendering as well. Such tooling and development
+environment integration is outside the scope of JFXGL itself though, but stay tuned for updates on the Horde engine.
 
 [horde]:https://www.cuchazinteractive.com/
 
-This project is essentially one giant hack, but less of a hack now than it was in previous versions. It works by
+JFXGL is essentially one giant hack, but less of a hack now than it was in previous versions. It works by
 modifying a small part of the [OpenJFX][openjfx] project to allow extending the rendering and input systems
 to use LWJGL/GLFW instead of the cross-platform backend it was using before. This project is most certainly
 not the best way to accomplish this goal, but it's the first way I found that works, and the resulting code
@@ -33,11 +47,11 @@ thing), and maybe others do too.
 [openjdk]: http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
 
 Use your favorite dependency manager (like [Gradle][gradle], [Jerkar][jerkar], or [Kobalt][kobalt])
-to include the JFXGL jars onto your project's classpath. The newest version so far is ``0.3.1``.
+to include the JFXGL jars onto your project's classpath. The newest version so far is ``0.4``.
 Here are the module ids:
 ```
-cuchaz:jfxgl:0.3.1
-cuchaz:jfxgl-jfxrt:0.3
+cuchaz:jfxgl:0.4
+cuchaz:jfxgl-jfxrt:0.4
 ```
 
 [gradle]: https://gradle.org
@@ -195,8 +209,12 @@ public class HelloWorld {
 	public static void jfxglmain(String[] args)
 	throws Exception {
 		
-		// create a window using GLFW
+		// create a window using GLFW (with a core OpenGL context)
 		GLFW.glfwInit();
+		GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+		GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 2);
+		GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GLFW.GLFW_TRUE);
+		GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
 		long hwnd = GLFW.glfwCreateWindow(300, 169, "JFXGL", MemoryUtil.NULL, MemoryUtil.NULL);
 		
 		// init OpenGL
@@ -282,8 +300,12 @@ public class HelloWorldPane {
 	public static void jfxglmain(String[] args)
 	throws Exception {
 		
-		// create a window using GLFW
+		// create a window using GLFW (with a core OpenGL context)
 		GLFW.glfwInit();
+		GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+		GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 2);
+		GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GLFW.GLFW_TRUE);
+		GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
 		long hwnd = GLFW.glfwCreateWindow(300, 169, "JFXGL", MemoryUtil.NULL, MemoryUtil.NULL);
 		
 		// init OpenGL

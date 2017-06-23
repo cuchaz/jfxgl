@@ -1,6 +1,13 @@
 
 # JFXGL Changelog
 
+## 2017-05-22 - v0.4
+ * Added support for OSX!
+ * Added support for popup windows
+ * Fixed issues with window size/position
+ * Added Ceylon example to README
+
+
 ## 2017-05-06 - v0.3.1
  * Improved support for Intellij IDEA by filtering JRE jars from launch classpath
  * Add Kotlin example to README
