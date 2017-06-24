@@ -89,7 +89,7 @@ public class Build extends JkJavaBuild {
 			.on(new File("../openjfx/modules/base/bin")).scope(PROVIDED)
 			
 			// 3rd-party libs
-			.on(lwjgl("3.1.2", "glfw", "jemalloc", "opengl"))
+			.on(lwjgl("3.1.2", "glfw", "jemalloc", "opengl", "nfd"))
 			
 			.build();
 	}

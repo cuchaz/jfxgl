@@ -12,11 +12,18 @@ package com.sun.glass.ui.jfxgl;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
+
+import org.lwjgl.PointerBuffer;
+import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.util.nfd.NFDPathSet;
+import org.lwjgl.util.nfd.NativeFileDialog;
 
 import com.sun.glass.ui.Application;
-import com.sun.glass.ui.CommonDialogs.ExtensionFilter;
-import com.sun.glass.ui.CommonDialogs.FileChooserResult;
+import com.sun.glass.ui.CommonDialogs;
 import com.sun.glass.ui.Cursor;
 import com.sun.glass.ui.JFXGLScreen;
 import com.sun.glass.ui.Pixels;
@@ -26,6 +33,10 @@ import com.sun.glass.ui.Size;
 import com.sun.glass.ui.Timer;
 import com.sun.glass.ui.View;
 import com.sun.glass.ui.Window;
+import com.sun.glass.ui.CommonDialogs.ExtensionFilter;
+import com.sun.glass.ui.CommonDialogs.FileChooserResult;
+import com.sun.glass.ui.CommonDialogs.Type;
+import com.sun.glass.ui.Pixels.Format;
 
 import cuchaz.jfxgl.EventsThreadNotRunningException;
 
@@ -253,12 +264,116 @@ public class JFXGLApplication extends Application {
 	@Override
 	protected FileChooserResult staticCommonDialogs_showFileChooser(Window owner, String folder, String filename,
 			String title, int type, boolean multipleMode, ExtensionFilter[] extensionFilters, int defaultFilterIndex) {
-		throw new UnsupportedOperationException();
+		
+		// sadly, JavaFX's file dialog implementation doesn't seem to work here =(
+		// at least in GTK, the dialogs don't clean up after we're done using them
+		// so try NFD instead
+		
+		// implement extension filters, convert to e.g., "png,jpg;pdf"
+		StringBuilder filterBuf = new StringBuilder();
+		for (ExtensionFilter ext : extensionFilters) {
+			if (filterBuf.length() > 0) {
+				filterBuf.append(';');
+			}
+			for (int i=0; i<ext.getExtensions().size(); i++) {
+				if (i > 0) {
+					filterBuf.append(',');
+				}
+				filterBuf.append(ext.getExtensions().get(i));
+			}
+		}
+		String filter = filterBuf.toString();
+		
+		if (multipleMode) {
+			return openFileDialogMultiple(filter, folder);
+		} else {
+			if (type == Type.OPEN) {
+				return openFileDialog(filter, folder);
+			} else if (type == Type.SAVE) {
+				return openSaveDialog(filter, folder);
+			} else {
+				throw new IllegalArgumentException("unknown file dialog type: " + type);
+			}
+		}
+	}
+	
+	private FileChooserResult openFileDialog(String filter, String folder) {
+		PointerBuffer pathBuf = MemoryUtil.memAllocPointer(1);
+		try {
+			int result = NativeFileDialog.NFD_OpenDialog(filter, folder, pathBuf);
+			switch (result) {
+				case NativeFileDialog.NFD_OKAY:
+					String path = pathBuf.getStringUTF8(0);
+					NativeFileDialog.nNFDi_Free(pathBuf.get(0));
+					return new FileChooserResult(Arrays.asList(new File(path)), null);
+				case NativeFileDialog.NFD_CANCEL:
+					return new FileChooserResult();
+				default:
+					throw new RuntimeException("NFD error: " + NativeFileDialog.NFD_GetError());
+			}
+		} finally {
+			MemoryUtil.memFree(pathBuf);
+		}
+	}
+	
+	private FileChooserResult openSaveDialog(String filter, String folder) {
+		PointerBuffer pathBuf = MemoryUtil.memAllocPointer(1);
+		try {
+			int result = NativeFileDialog.NFD_SaveDialog(filter, folder, pathBuf);
+			switch (result) {
+				case NativeFileDialog.NFD_OKAY:
+					String path = pathBuf.getStringUTF8(0);
+					NativeFileDialog.nNFDi_Free(pathBuf.get(0));
+					return new FileChooserResult(Arrays.asList(new File(path)), null);
+				case NativeFileDialog.NFD_CANCEL:
+					return new FileChooserResult();
+				default:
+					throw new RuntimeException("NFD error: " + NativeFileDialog.NFD_GetError());
+			}
+		} finally {
+			MemoryUtil.memFree(pathBuf);
+		}
+	}
+
+	private FileChooserResult openFileDialogMultiple(String filter, String folder) {
+		try (NFDPathSet pathSet = NFDPathSet.calloc()) {
+			int result = NativeFileDialog.NFD_OpenDialogMultiple(filter, folder, pathSet);
+			switch (result) {
+				case NativeFileDialog.NFD_OKAY:
+					List<File> files = new ArrayList<>();
+					long count = NativeFileDialog.NFD_PathSet_GetCount(pathSet);
+					for (long i=0; i<count; i++) {
+						files.add(new File(NativeFileDialog.NFD_PathSet_GetPath(pathSet, i)));
+					}
+					NativeFileDialog.NFD_PathSet_Free(pathSet);
+					return new FileChooserResult(files, null);
+				case NativeFileDialog.NFD_CANCEL:
+					return new FileChooserResult();
+				default:
+					throw new RuntimeException("NFD error: " + NativeFileDialog.NFD_GetError());
+			}
+		}
 	}
 
 	@Override
 	protected File staticCommonDialogs_showFolderChooser(Window owner, String folder, String title) {
-		throw new UnsupportedOperationException();
+		PointerBuffer pathBuf = MemoryUtil.memAllocPointer(1);
+		try {
+			
+			int result = NativeFileDialog.NFD_PickFolder(folder, pathBuf);
+			switch (result) {
+				case NativeFileDialog.NFD_OKAY:
+					String path = pathBuf.getStringUTF8(0);
+					NativeFileDialog.nNFDi_Free(pathBuf.get(0));
+					return new File(path);
+				case NativeFileDialog.NFD_CANCEL:
+					return null;
+				default:
+					throw new RuntimeException("NFD error: " + NativeFileDialog.NFD_GetError());
+			}
+		} finally {
+			MemoryUtil.memFree(pathBuf);
+		}
 	}
 
 	// these are pretty arbitrary, I guess

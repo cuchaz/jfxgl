@@ -34,6 +34,7 @@ public class JFXGLPlatformFactory extends PlatformFactory {
 
 	@Override
 	public Application createApplication() {
+		// NOTE: don't create the native app, it apparently interferes with NFD
 		return new JFXGLApplication();
 	}
 

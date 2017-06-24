@@ -133,6 +133,7 @@ public class JFXGLMainWindow extends JFXGLWindow {
 		// don't actually create a window here
 		// use the one that was already created by the main thread
 		return JFXGLContexts.app.hwnd;
+		// NOTE: this isn't the real window handle, it's just a pointer to a GLFW object
 	}
 
 	@Override
