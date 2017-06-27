@@ -14,8 +14,8 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
@@ -23,7 +23,9 @@ import org.lwjgl.util.nfd.NFDPathSet;
 import org.lwjgl.util.nfd.NativeFileDialog;
 
 import com.sun.glass.ui.Application;
-import com.sun.glass.ui.CommonDialogs;
+import com.sun.glass.ui.CommonDialogs.ExtensionFilter;
+import com.sun.glass.ui.CommonDialogs.FileChooserResult;
+import com.sun.glass.ui.CommonDialogs.Type;
 import com.sun.glass.ui.Cursor;
 import com.sun.glass.ui.JFXGLScreen;
 import com.sun.glass.ui.Pixels;
@@ -33,54 +35,17 @@ import com.sun.glass.ui.Size;
 import com.sun.glass.ui.Timer;
 import com.sun.glass.ui.View;
 import com.sun.glass.ui.Window;
-import com.sun.glass.ui.CommonDialogs.ExtensionFilter;
-import com.sun.glass.ui.CommonDialogs.FileChooserResult;
-import com.sun.glass.ui.CommonDialogs.Type;
-import com.sun.glass.ui.Pixels.Format;
 
 import cuchaz.jfxgl.EventsThreadNotRunningException;
 
 public class JFXGLApplication extends Application {
 
-	private static abstract class Event {
-		abstract void dispatch();
-	}
-
-	private static class RunnableEvent extends Event {
-		private boolean wait;
-		private Runnable runnable;
-
-		RunnableEvent(boolean wait, Runnable runnable) {
-			this.wait = wait;
-			this.runnable = runnable;
-		}
-
-		@Override
-		void dispatch() {
-			runnable.run();
-			if (wait) {
-				synchronized (invokeAndWaitLock) {
-					waitingFor = null;
-					invokeAndWaitLock.notify();
-				}
-			}
-		}
-
-		@Override
-		public String toString() {
-			return "RunnableEvent[runnable=" + runnable + ",wait=" + wait + "]";
-		}
-	}
-	
-	private static final Object invokeAndWaitLock = new Object();
-	private static Runnable waitingFor;
-
-	private LinkedList<Event> eventList;
+	private EventQueue events;
 	
 	private volatile boolean isRunning;
 	
 	public JFXGLApplication() {
-		eventList = new LinkedList<Event>();
+		events = new EventQueue();
 		isRunning = false;
 	}
 	
@@ -89,6 +54,7 @@ public class JFXGLApplication extends Application {
 		super.terminate();
 		
 		// stop the event thread
+		events.shutdown();
 		isRunning = false;
 	}
 	
@@ -109,18 +75,10 @@ public class JFXGLApplication extends Application {
 		
 		isRunning = true;
 		while (isRunning) {
-			
-			// process events
-			Event event = null;
-			synchronized (eventList) {
-				event = eventList.poll();
-			}
-			if (event != null) {
-				try {
-					event.dispatch();
-				} catch (Throwable t) {
-					reportException(t);
-				}
+			try {
+				events.getNextEvent().run();
+			} catch (Throwable t) {
+				reportException(t);
 			}
 		}
 	}
@@ -128,30 +86,25 @@ public class JFXGLApplication extends Application {
 	@Override
 	protected void _invokeAndWait(Runnable runnable) {
 		checkEventThreadRunning();
-		synchronized (invokeAndWaitLock) {
-			waitingFor = runnable;
-		}
-		synchronized (eventList) {
-			eventList.addLast(new RunnableEvent(true, runnable));
-			eventList.notify();
-		}
-		synchronized (invokeAndWaitLock) {
-			while (waitingFor == runnable) {
-				try {
-					invokeAndWaitLock.wait();
-				} catch (InterruptedException ex) {
-				}
-			}
-		}
+		final CountDownLatch latch = new CountDownLatch(1);
+        events.postEvent(() -> {
+            try {
+                runnable.run();
+            } finally {
+                latch.countDown();
+            }
+        });
+        try {
+            latch.await();
+        } catch (InterruptedException ex) {
+        	// don't care
+        }
 	}
 
 	@Override
 	protected void _invokeLater(Runnable runnable) {
 		checkEventThreadRunning();
-		synchronized (eventList) {
-			eventList.addLast(new RunnableEvent(false, runnable));
-			eventList.notify();
-		}
+		events.postEvent(runnable);
 	}
 	
 	private void checkEventThreadRunning() {
