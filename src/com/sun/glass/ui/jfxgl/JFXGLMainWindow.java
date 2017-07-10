@@ -39,9 +39,10 @@ public class JFXGLMainWindow extends JFXGLWindow {
 	
 	public static JFXGLMainWindow instance = null;
 	
+	public final WindowFocus focus;
+	
 	private JFXGLContext context = null;
 	
-	private JFXGLView view = null;
 	private GLFWWindowSizeCallbackI windowSizeCallback = null;
 	private GLFWWindowSizeCallbackI existingWindowSizeCallback = null;
 	private GLFWWindowPosCallbackI windowPosCallback = null;
@@ -69,6 +70,8 @@ public class JFXGLMainWindow extends JFXGLWindow {
 		}
 		instance = this;
 		
+		focus = new WindowFocus(this);
+		
 		// get our context
 		context = JFXGLContexts.app;
 		
@@ -85,8 +88,8 @@ public class JFXGLMainWindow extends JFXGLWindow {
 			// NOTE: GLFW events called on main thread, so relay to events thread
 			JFXGLToolkit.runLater(() -> {
 				notifyResize(WindowEvent.RESIZE, width, height);
-				if (view != null) {
-					view.notifyResize(this.width, this.height);
+				if (getRenderView() != null) {
+					getRenderView().notifyResize(this.width, this.height);
 				}
 			});
 			JFXGLScreen.update(this.x, this.y, this.width, this.height);
@@ -104,8 +107,8 @@ public class JFXGLMainWindow extends JFXGLWindow {
 			JFXGLToolkit.runLater(() -> {
 				notifyMove(x, y);
 			});
-			if (view != null) {
-				view.setScreenPos(x, y);
+			if (getRenderView() != null) {
+				getRenderView().setScreenPos(x, y);
 			}
 			
 			this.x = x;
@@ -152,10 +155,10 @@ public class JFXGLMainWindow extends JFXGLWindow {
 	@CalledByEventsThread
 	protected boolean _setView(long hwnd, View view) {
 		
-		this.view = (JFXGLView)view;
+		super._setView(hwnd, view);
 		
 		// tell JavaFX to update the view size
-		if (this.view != null) {
+		if (getRenderView() != null) {
 			
 			// get the initial window size and pos
 			try (MemoryStack m = MemoryStack.stackPush()) {
@@ -173,8 +176,8 @@ public class JFXGLMainWindow extends JFXGLWindow {
 			// so put it on the event queue
 			JFXGLToolkit.runLater(() -> {
 				notifyResize(WindowEvent.RESIZE, width, height);
-				this.view.notifyResize(width, height);
-				this.view.setScreenPos(x, y);
+				getRenderView().notifyResize(width, height);
+				getRenderView().setScreenPos(x, y);
 				notifyMove(x, y);
 			});
 			JFXGLScreen.update(this.x, this.y, this.width, this.height);

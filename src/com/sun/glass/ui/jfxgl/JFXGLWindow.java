@@ -9,6 +9,7 @@
  *************************************************************************/
 package com.sun.glass.ui.jfxgl;
 
+import com.sun.glass.events.WindowEvent;
 import com.sun.glass.ui.Cursor;
 import com.sun.glass.ui.Pixels;
 import com.sun.glass.ui.Screen;
@@ -28,10 +29,23 @@ public abstract class JFXGLWindow extends Window {
 	}
 	
 	private Implementation impl;
+	private JFXGLView view;
 
 	protected JFXGLWindow(Window owner, Screen screen, int styleMask, Implementation impl) {
 		super(owner, screen, styleMask);
 		this.impl = impl;
+	}
+	
+	@Override
+	@CalledByEventsThread
+	protected boolean _setView(long hwnd, View view) {
+		this.view = (JFXGLView)view;
+		return true;
+	}
+	
+	@CalledByMainThread
+	public JFXGLView getRenderView() {
+		return view;
 	}
 	
 	@CalledByMainThread
@@ -48,9 +62,15 @@ public abstract class JFXGLWindow extends Window {
 	public abstract OffscreenBuffer getBuffer();
 
 	@Override
-	@CalledByEventsThread
-	protected boolean _setView(long hwnd, View view) {
-		if (impl == Implementation.Throw) throw new UnsupportedOperationException();
+    public void notifyFocus(int event) {
+		super.notifyFocus(event);
+	}
+	
+	@Override
+	protected boolean _requestFocus(long hwnd, int event) {
+		if (event == WindowEvent.FOCUS_GAINED) {
+			JFXGLMainWindow.instance.focus.setFocusedWindow(this);
+		}
 		return true;
 	}
 	
@@ -118,12 +138,6 @@ public abstract class JFXGLWindow extends Window {
 		return false;
 	}
 	
-	@Override
-	protected boolean _requestFocus(long hwnd, int event) {
-		if (impl == Implementation.Throw) throw new UnsupportedOperationException();
-		return true;
-	}
-
 	@Override
 	protected void _setFocusable(long hwnd, boolean isFocusable) {
 		if (impl == Implementation.Throw) throw new UnsupportedOperationException();

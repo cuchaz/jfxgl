@@ -17,7 +17,6 @@ import org.lwjgl.opengl.GL11;
 
 import com.sun.glass.events.WindowEvent;
 import com.sun.glass.ui.Screen;
-import com.sun.glass.ui.View;
 import com.sun.glass.ui.Window;
 import com.sun.prism.es2.JFXGLContext;
 import com.sun.prism.es2.JFXGLContexts;
@@ -33,8 +32,20 @@ public class JFXGLPopupWindow extends JFXGLWindow {
 	
 	public static List<JFXGLPopupWindow> windows = Collections.synchronizedList(new ArrayList<>());
 	
+	public static JFXGLPopupWindow findPopupAt(int x, int y) {
+		for (JFXGLPopupWindow popup : JFXGLPopupWindow.windows) {
+			int xrel = x - popup.getRenderX();
+			if (xrel >= 0 && xrel <= popup.getWidth()) {
+				int yrel = y - popup.getRenderY();
+				if (yrel >= 0 && yrel <= popup.getHeight()) {
+					return popup;
+				}
+			}
+		}
+		return null;
+	}
+	
 	private JFXGLContext context = null;
-	private JFXGLView view = null;
 	
 	private int renderX = 0;
 	private int renderY = 0;
@@ -64,18 +75,6 @@ public class JFXGLPopupWindow extends JFXGLWindow {
 		return JFXGLContexts.app.hwnd;
 	}
 	
-	@Override
-	@CalledByEventsThread
-	protected boolean _setView(long hwnd, View view) {
-		this.view = (JFXGLView)view;
-		return true;
-	}
-	
-	@CalledByMainThread
-	public JFXGLView getRenderView() {
-		return view;
-	}
-
 	@Override
 	@CalledByEventsThread
 	protected boolean _close(long hwnd) {
@@ -110,8 +109,8 @@ public class JFXGLPopupWindow extends JFXGLWindow {
 		
 		// tell the window and view to resize
 		notifyResize(WindowEvent.RESIZE, this.width, this.height);
-		if (view != null) {
-			view.notifyResize(this.width, this.height);
+		if (getRenderView() != null) {
+			getRenderView().notifyResize(this.width, this.height);
 		}
 	}
 	
