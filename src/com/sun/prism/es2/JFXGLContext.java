@@ -28,12 +28,12 @@ import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL41;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
 
 import com.sun.prism.Texture.WrapMode;
-import com.sun.prism.impl.BufferUtil;
 import com.sun.prism.paint.Color;
 
 import cuchaz.jfxgl.GLState;
@@ -520,6 +520,8 @@ public class JFXGLContext extends GLContext {
 	}
 	
 	private ByteBuffer imageBuf = null;
+	private static final int[] swizzleMaskDefault = {GL11.GL_RED, GL11.GL_GREEN, GL11.GL_BLUE, GL11.GL_ALPHA};
+	private static final int[] swizzleMaskRedToAlpha = {GL11.GL_ZERO, GL11.GL_ZERO, GL11.GL_ZERO, GL11.GL_RED};
 
 	@Override
 	public boolean texImage2D(int target, int level, int internalFormat, int width, int height, int border, int format, int type, Buffer pixels, boolean useMipmap) {
@@ -549,14 +551,20 @@ public class JFXGLContext extends GLContext {
 		
 		// alpha and luminance formats aren't supported in core profiles anymore, so convert to RGBA
 		if (format == GL11.GL_ALPHA) {
-			format = GL11.GL_RGBA;
 			
-			if (buf != null) {
+			if (caps.GL_ARB_texture_swizzle) {
+				format = GL11.GL_RED;
+				GL11.glTexParameteriv(GL11.GL_TEXTURE_2D, GL33.GL_TEXTURE_SWIZZLE_RGBA, swizzleMaskRedToAlpha);
+			} else if (buf != null) {
+				format = GL11.GL_RGBA;
 				buf = convertPixelsAlphaToRGBA(buf);
 			}
 			
 		} else if (format == GL11.GL_LUMINANCE) {
 			throw new IllegalArgumentException("luminance textures aren't supported in core profiles");
+			
+		} else if (caps.GL_ARB_texture_swizzle) {
+			GL11.glTexParameteriv(GL11.GL_TEXTURE_2D, GL33.GL_TEXTURE_SWIZZLE_RGBA, swizzleMaskDefault);
 		}
 		
 		if (internalFormat == GL11.GL_ALPHA || internalFormat == GL11.GL_LUMINANCE) {
@@ -608,14 +616,20 @@ public class JFXGLContext extends GLContext {
 		
 		// alpha and luminance formats aren't supported in core profiles anymore, so convert to RGBA
 		if (format == GL11.GL_ALPHA) {
-			format = GL11.GL_RGBA;
 			
-			if (buf != null) {
+			if (caps.GL_ARB_texture_swizzle) {
+				format = GL11.GL_RED;
+				GL11.glTexParameteriv(GL11.GL_TEXTURE_2D, GL33.GL_TEXTURE_SWIZZLE_RGBA, swizzleMaskRedToAlpha);
+			} else if (buf != null) {
+				format = GL11.GL_RGBA;
 				buf = convertPixelsAlphaToRGBA(buf);
 			}
 			
 		} else if (format == GL11.GL_LUMINANCE) {
 			throw new IllegalArgumentException("luminance textures aren't supported in core profiles");
+			
+		} else if (caps.GL_ARB_texture_swizzle) {
+			GL11.glTexParameteriv(GL11.GL_TEXTURE_2D, GL33.GL_TEXTURE_SWIZZLE_RGBA, swizzleMaskDefault);
 		}
 		
 		GL11.glTexSubImage2D(
@@ -631,19 +645,24 @@ public class JFXGLContext extends GLContext {
 		);
 	}
 	
+	private ByteBuffer expandedImageBuf = null;
+	
 	private ByteBuffer convertPixelsAlphaToRGBA(ByteBuffer buf) {
 		
-		ByteBuffer expandedBuf = BufferUtil.newByteBuffer(buf.limit()*4);
+		// NOTE: this is a huge performance bottleneck when texture swizzle masks aren't available
+		
+		expandedImageBuf = manageBufferSize(expandedImageBuf, buf.limit()*4);
+		expandedImageBuf.clear();
 		buf.rewind();
 		while (buf.hasRemaining()) {
-			expandedBuf.put((byte)0);
-			expandedBuf.put((byte)0);
-			expandedBuf.put((byte)0);
-			expandedBuf.put(buf.get());
+			expandedImageBuf.put((byte)0);
+			expandedImageBuf.put((byte)0);
+			expandedImageBuf.put((byte)0);
+			expandedImageBuf.put(buf.get());
 		}
-		expandedBuf.flip();
+		expandedImageBuf.flip();
 		
-		return expandedBuf;
+		return expandedImageBuf;
 	}
 	
 	@Override
@@ -1168,8 +1187,10 @@ public class JFXGLContext extends GLContext {
 	private static ByteBuffer updateBuffer(ByteBuffer buf, float[] data, int numBytesNeeded) {
 		buf = manageBufferSize(buf, numBytesNeeded);
 		buf.clear();
-		buf.asFloatBuffer().put(data, 0, numBytesNeeded/Float.BYTES);
-		buf.position(numBytesNeeded); // apparently pos doesn't get updated by asFloatBuffer
+		int numFloatsNeeded = numBytesNeeded/Float.BYTES;
+		for (int i=0; i<numFloatsNeeded; i++) {
+			buf.putFloat(data[i]);
+		}
 		buf.flip();
 		return buf;
 	}
