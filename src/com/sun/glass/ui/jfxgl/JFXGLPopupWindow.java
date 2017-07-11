@@ -42,10 +42,11 @@ public class JFXGLPopupWindow extends JFXGLWindow {
 			// skip popups that are out of range
 			int xrel = x - popup.getRenderX();
 			if (xrel < 0 || xrel > popup.getWidth()) {
-				int yrel = y - popup.getRenderY();
-				if (yrel < 0 || yrel > popup.getHeight()) {
-					continue;
-				}
+				continue;
+			}
+			int yrel = y - popup.getRenderY();
+			if (yrel < 0 || yrel > popup.getHeight()) {
+				continue;
 			}
 			
 			// pick the top-most popup
