@@ -28,11 +28,13 @@ public abstract class JFXGLWindow extends Window {
 		Throw;
 	}
 	
-	private Implementation impl;
+	public final JFXGLWindow owner;
+	private final Implementation impl;
 	private JFXGLView view;
 
 	protected JFXGLWindow(Window owner, Screen screen, int styleMask, Implementation impl) {
 		super(owner, screen, styleMask);
+		this.owner = (JFXGLWindow)owner;
 		this.impl = impl;
 	}
 	
@@ -46,6 +48,16 @@ public abstract class JFXGLWindow extends Window {
 	@CalledByMainThread
 	public JFXGLView getRenderView() {
 		return view;
+	}
+	
+	public int getNumOwners() {
+		int count = 0;
+		JFXGLWindow owner = this.owner;
+		while (owner != null) {
+			count++;
+			owner = owner.owner;
+		}
+		return count;
 	}
 	
 	@CalledByMainThread

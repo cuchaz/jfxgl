@@ -33,16 +33,30 @@ public class JFXGLPopupWindow extends JFXGLWindow {
 	public static List<JFXGLPopupWindow> windows = Collections.synchronizedList(new ArrayList<>());
 	
 	public static JFXGLPopupWindow findPopupAt(int x, int y) {
+		
+		JFXGLPopupWindow topPopup = null;
+		int maxNumOwners = 0;
+		
 		for (JFXGLPopupWindow popup : JFXGLPopupWindow.windows) {
+			
+			// skip popups that are out of range
 			int xrel = x - popup.getRenderX();
-			if (xrel >= 0 && xrel <= popup.getWidth()) {
+			if (xrel < 0 || xrel > popup.getWidth()) {
 				int yrel = y - popup.getRenderY();
-				if (yrel >= 0 && yrel <= popup.getHeight()) {
-					return popup;
+				if (yrel < 0 || yrel > popup.getHeight()) {
+					continue;
 				}
 			}
+			
+			// pick the top-most popup
+			int numOwners = popup.getNumOwners();
+			if (topPopup == null || numOwners > maxNumOwners) {
+				topPopup = popup;
+				maxNumOwners = numOwners;
+			}
 		}
-		return null;
+		
+		return topPopup;
 	}
 	
 	private JFXGLContext context = null;
