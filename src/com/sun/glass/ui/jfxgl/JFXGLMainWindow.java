@@ -462,4 +462,9 @@ public class JFXGLMainWindow extends JFXGLWindow {
 	protected void _exitModal(long hwnd) {
 		// don't let JavaFX control the window
 	}
+	
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + ": " + width + "x" + height;
+	}
 }

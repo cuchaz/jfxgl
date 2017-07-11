@@ -20,6 +20,7 @@ import com.sun.glass.ui.View;
 
 import cuchaz.jfxgl.CalledByEventsThread;
 import cuchaz.jfxgl.CalledByMainThread;
+import javafx.application.Platform;
 import javafx.scene.input.KeyCode;
 
 public class JFXGLView extends View {
@@ -211,8 +212,13 @@ public class JFXGLView extends View {
 		}
 		
 		// update window focus if needed
+		final JFXGLWindow window = targetView.window;
 		if (type == MouseEvent.DOWN) {
-			JFXGLMainWindow.instance.focus.setFocusedWindow(targetView.window);
+			Platform.runLater(() -> {
+				if (!window.isFocused()) {
+					window.requestFocus();
+				}
+			});
 		}
 
 		targetView.notifyMouse(type, button, mouseX, mouseY, screenX, screenY, mouseMods, isPopupTrigger, isSynthesized);

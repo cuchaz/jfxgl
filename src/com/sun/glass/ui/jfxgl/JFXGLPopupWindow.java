@@ -97,6 +97,10 @@ public class JFXGLPopupWindow extends JFXGLWindow {
 		windows.remove(this);
 		
 		notifyDestroy();
+		
+		// return focus to the parent
+		JFXGLMainWindow.instance.focus.setFocusedWindow(owner);
+		
 		return false; // return value apparently ignored
 	}
 
@@ -205,5 +209,10 @@ public class JFXGLPopupWindow extends JFXGLWindow {
 	@Override
 	public OffscreenBuffer getBuffer() {
 		return buf;
+	}
+	
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + ": " + width + "x" + height;
 	}
 }

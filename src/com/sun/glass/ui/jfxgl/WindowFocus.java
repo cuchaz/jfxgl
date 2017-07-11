@@ -22,13 +22,12 @@ public class WindowFocus {
 	}
 	
 	public JFXGLWindow getFocusedWindow() {
-		fallback();
 		return focusedWindow;
 	}
 	
 	public void setFocusedWindow(JFXGLWindow val) {
 		if (val == null) {
-			throw new IllegalArgumentException("val can't be null");
+			val = mainWindow;
 		}
 		if (focusedWindow == val) {
 			return;
@@ -36,18 +35,5 @@ public class WindowFocus {
 		focusedWindow.notifyFocus(WindowEvent.FOCUS_LOST);
 		focusedWindow = val;
 		focusedWindow.notifyFocus(WindowEvent.FOCUS_GAINED);
-	}
-	
-	private void fallback() {
-		
-		if (focusedWindow == mainWindow) {
-			return;
-		}
-		
-		// if the focused window has been cleaned up somehow,
-		// fallback to the main window
-		if (focusedWindow.getRenderView() == null) {
-			setFocusedWindow(mainWindow);
-		}
 	}
 }
