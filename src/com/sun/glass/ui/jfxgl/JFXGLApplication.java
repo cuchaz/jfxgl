@@ -215,7 +215,7 @@ public class JFXGLApplication extends Application {
 	}
 
 	@Override
-	protected FileChooserResult staticCommonDialogs_showFileChooser(Window owner, String folder, String filename,
+	public FileChooserResult staticCommonDialogs_showFileChooser(Window owner, String folder, String filename,
 			String title, int type, boolean multipleMode, ExtensionFilter[] extensionFilters, int defaultFilterIndex) {
 		
 		// sadly, JavaFX's file dialog implementation doesn't seem to work here =(
@@ -309,7 +309,7 @@ public class JFXGLApplication extends Application {
 	}
 
 	@Override
-	protected File staticCommonDialogs_showFolderChooser(Window owner, String folder, String title) {
+	public File staticCommonDialogs_showFolderChooser(Window owner, String folder, String title) {
 		PointerBuffer pathBuf = MemoryUtil.memAllocPointer(1);
 		try {
 			
