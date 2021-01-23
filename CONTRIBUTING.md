@@ -14,8 +14,8 @@ This whole process is another giant hack, but it mostly works.a
 
 ## Sorry, Mario, but your princess is in another castle
 
-Workspace setup is done by a script in a separate project, [JFXGL-env](https://bitbucket.org/cuchaz/jfxgl-env).
-See the [README](https://bitbucket.org/cuchaz/jfxgl-env) there for instructions.
+Workspace setup is done by a script in a separate project, [JFXGL-env](https://github.com/cuchaz/jfxgl-env).
+See the [README](https://github.com/cuchaz/jfxgl-env) there for instructions.
 
 
 # Building JFXGL

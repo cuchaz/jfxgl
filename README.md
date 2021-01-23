@@ -20,13 +20,13 @@ JavaFX for use in OpenGL v3.2+ core profiles that lack v2 functionality. This al
 fully modern OpenGL rendering techniques with JavaFX UIs even on platforms that don't support OpenGL compatibility
 profiles, like OSX.
 
-JFXGL was developed as a component for my upcoming Java-based 2D video game engine, the [Horde Engine][horde].
+~~JFXGL was developed as a component for my upcoming Java-based 2D video game engine, the Horde Engine.
 The game engine is still in development, but when it's ready, the Horde Engine will allow game developers to
 use fully-featured JavaFX UIs in their games via very easy-to-use tooling. The strong UI system in Horde makes
 it useful for non-game applications that need hardware-accelerated rendering as well. Such tooling and development
-environment integration is outside the scope of JFXGL itself though, but stay tuned for updates on the Horde engine.
+environment integration is outside the scope of JFXGL itself though, but stay tuned for updates on the Horde engine.~~
 
-[horde]:https://www.cuchazinteractive.com/
+**Update:** This game engine project has been discontinued.
 
 JFXGL is essentially one giant hack, but less of a hack now than it was in previous versions. It works by
 modifying a small part of the [OpenJFX][openjfx] project to allow extending the rendering and input systems
@@ -366,7 +366,7 @@ public class HelloWorldPane {
 
 See the [JFXGL-demos][demos] project for more examples.
 
-[demos]: https://bitbucket.org/cuchaz/jfxgl-demos
+[demos]: https://github.com/cuchaz/jfxgl-demos
 
 
 ## License

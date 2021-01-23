@@ -29,7 +29,7 @@
  * Increase OpenGL compatibility of JFXGL shaders.
  * Create [JFXGL-env][jfxgl-env] project to automate lengthy dev environment setup.
 
-[jfxgl-env]: https://bitbucket.org/cuchaz/jfxgl-env
+[jfxgl-env]: https://github.com/cuchaz/jfxgl-env
 
 
 ## 2017-03-10 - v0.1
